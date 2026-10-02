@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+.tabla {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  th {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--brand-border);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--brand-muted);
+  }
+
+  td {
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid #f1eff0;
+    vertical-align: top;
+    color: var(--brand-ink);
+
+    small {
+      display: block;
+      margin-top: 0.15rem;
+      color: var(--brand-muted);
+    }
+  }
+
+  .comision {
+    color: var(--brand-ink) !important;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  .acciones {
+    white-space: nowrap;
+
+    .enlace + .enlace {
+      margin-left: 0.8rem;
+    }
+  }
+}
+
+.enlace {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #2f6fb0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &--peligro {
+    color: var(--brand-danger);
+  }
+}
+
+.sede-libre {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a8a4a;
+}

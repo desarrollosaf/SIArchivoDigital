@@ -1,0 +1,518 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+  --brand-primary: rgb(150, 0, 72);
+  --brand-primary-dark: #5a002b;
+  --brand-primary-soft: rgba(150, 0, 72, 0.08);
+  --brand-ink: #4b4b4d;
+  --brand-muted: #767679;
+  --brand-border: #e4e2e3;
+  --brand-bg: #f3f4f6;
+  --brand-danger: #b3261e;
+  --brand-danger-bg: #fdecea;
+  --brand-green: #79b037;
+  --brand-lime: #d6ed70;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ag-grid renders its own DOM outside Angular's style encapsulation,
+   so header alignment has to be set globally rather than per-component. */
+ag-grid-angular .ag-header-cell-label {
+  justify-content: center;
+}
+
+ag-grid-angular .ag-header-cell-label .ag-header-cell-text {
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    Roboto,
+    sans-serif;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1.4rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s,
+    border-color 0.15s,
+    opacity 0.12s;
+
+  svg {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+  }
+
+  &--primary {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
+    color: #fff;
+    box-shadow: 0 10px 22px var(--brand-primary-soft);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(150, 0, 72, 0.24);
+    }
+  }
+
+  &--outline {
+    background: #fff;
+    color: var(--brand-ink);
+    border: 1.5px solid var(--brand-border);
+
+    &:hover:not(:disabled) {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spinner-spin 0.7s linear infinite;
+}
+
+@keyframes spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Piezas comunes de las pantallas de Archivo Digital. Viven aquí (y no en cada componente)
+ * porque se repiten en casi todas las vistas y así cada hoja de estilo se queda chica.
+ * ---------------------------------------------------------------------------------------- */
+
+.btn--sm {
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.btn--peligro {
+  background: #fff;
+  color: var(--brand-danger);
+  border: 1.5px solid rgba(179, 38, 30, 0.35);
+
+  &:hover:not(:disabled) {
+    background: var(--brand-danger);
+    color: #fff;
+  }
+}
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: pagina-entrada 0.3s ease-out;
+
+  &__encabezado {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.5rem;
+      color: var(--brand-ink);
+    }
+
+    p {
+      margin: 0;
+      color: var(--brand-muted);
+      font-size: 0.92rem;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+}
+
+@keyframes pagina-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tarjeta {
+  background: #fff;
+  border: 1px solid var(--brand-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+
+  > h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 1.1rem;
+    font-size: 1.05rem;
+    color: var(--brand-ink);
+  }
+}
+
+.numero-paso {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.aviso {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 0.88rem;
+
+  &--error {
+    color: var(--brand-danger);
+  }
+
+  &--caja {
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: var(--brand-bg);
+  }
+}
+
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.1rem;
+
+  &--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  &--1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+
+  &--completo {
+    grid-column: 1 / -1;
+  }
+
+  > label,
+  &__etiqueta {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--brand-ink);
+    letter-spacing: 0.02em;
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    padding: 0 0.85rem;
+    border: 1.5px solid var(--brand-border);
+    border-radius: 12px;
+    background: #f4f6f5;
+    font-size: 0.9rem;
+    color: var(--brand-ink);
+    outline: none;
+    font-family: inherit;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+
+    &:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px var(--brand-primary-soft);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    &.is-invalid {
+      border-color: var(--brand-danger);
+      background: var(--brand-danger-bg);
+    }
+  }
+
+  textarea {
+    height: auto;
+    min-height: 92px;
+    padding: 0.7rem 0.85rem;
+    resize: vertical;
+  }
+
+  &__ayuda {
+    font-size: 0.74rem;
+    color: var(--brand-muted);
+  }
+}
+
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--brand-ink);
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--brand-primary);
+  }
+}
+
+.obligatorio {
+  color: var(--brand-danger);
+  font-weight: 700;
+}
+
+.acciones-formulario {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+
+  &--verde {
+    background: #e4f6ea;
+    color: #1a8a4a;
+  }
+  &--ambar {
+    background: #fef3c7;
+    color: #a16207;
+  }
+  &--roja {
+    background: var(--brand-danger-bg);
+    color: var(--brand-danger);
+  }
+  &--gris {
+    background: var(--brand-bg);
+    color: var(--brand-muted);
+  }
+  &--azul {
+    background: #e8f1fa;
+    color: #2f6fb0;
+  }
+  &--vino {
+    background: var(--brand-primary-soft);
+    color: var(--brand-primary);
+  }
+}
+
+.pestanas {
+  display: inline-flex;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  background: var(--brand-bg);
+
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 9px;
+    background: none;
+    color: var(--brand-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &.activa {
+      background: #fff;
+      color: var(--brand-primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+
+  select,
+  input[type='date'] {
+    height: 42px;
+    padding: 0 0.9rem;
+    border: 1.5px solid var(--brand-border);
+    border-radius: 10px;
+    background: #f9fafa;
+    color: var(--brand-ink);
+    font-size: 0.86rem;
+    font-weight: 600;
+    outline: none;
+  }
+}
+
+.grid-ag {
+  width: 100%;
+}
+
+/* El texto largo (asuntos) se ajusta dentro de la celda en vez de cortarse. */
+.celda-larga {
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+}
+
+@media (max-width: 760px) {
+  .formulario,
+  .formulario--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.celda-folio__detalle {
+  color: var(--brand-muted);
+  font-size: 0.72rem;
+}
+
+/* Documento cancelado dentro de una bandeja (Laravel lo pintaba en rosa). */
+ag-grid-angular .fila-cancelada .ag-cell {
+  background: #fdeef0;
+  color: var(--brand-muted);
+}
+
+/* Lista de eventos del día seleccionado (agendas). */
+.lista-eventos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  &__color {
+    flex-shrink: 0;
+    width: 6px;
+    border-radius: 3px;
+  }
+
+  a,
+  button.lista-eventos__titulo {
+    padding: 0;
+    border: none;
+    background: none;
+    font-weight: 800;
+    color: var(--brand-primary);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  small {
+    margin-left: 0.5rem;
+    color: var(--brand-muted);
+  }
+
+  p {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    color: var(--brand-ink);
+  }
+}
+
+/* Impresión (agenda de Presidencia): solo el contenido, sin barra, pie ni botones. */
+@media print {
+  .topbar,
+  .site-footer,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  body,
+  .content {
+    background: #fff !important;
+  }
+
+  .content {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}

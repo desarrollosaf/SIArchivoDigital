@@ -1,0 +1,70 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Archivo de concentración</h1>
+      <p>
+        Documentos que registraste y que ya cumplieron su plazo en archivo de trámite (según su
+        serie; 2 años si no tiene). Deben transferirse al archivo de concentración.
+      </p>
+    </div>
+  </header>
+
+  <div class="tarjeta">
+    <div class="tabla-header">
+      <div class="tabla-header__titulo">
+        <h2>Para transferir</h2>
+        @if (!cargando() && !error()) {
+          <p>
+            {{ documentos().length }} {{ documentos().length === 1 ? 'documento' : 'documentos' }}
+          </p>
+        }
+      </div>
+      <div class="tabla-header__busqueda">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+          <path
+            d="m20 20-3.2-3.2"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+        </svg>
+        <input
+          type="text"
+          placeholder="Filtrar…"
+          [ngModel]="busqueda()"
+          (ngModelChange)="busqueda.set($event)"
+        />
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <div class="tabla-skeleton">
+        <div class="tabla-skeleton__header"></div>
+        @for (n of [1, 2, 3, 4]; track n) {
+          <div class="tabla-skeleton__row"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <p class="aviso aviso--error">{{ error() }}</p>
+    } @else if (documentos().length === 0) {
+      <p class="aviso">No tienes documentos pendientes de transferir.</p>
+    } @else {
+      <ag-grid-angular
+        class="grid-ag"
+        [theme]="gridTheme"
+        [localeText]="localeText"
+        [rowData]="documentos()"
+        [columnDefs]="columnas"
+        [quickFilterText]="busqueda()"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[20, 50, 100]"
+        [domLayout]="'autoHeight'"
+        [enableCellTextSelection]="true"
+        [ensureDomOrder]="true"
+        (gridReady)="onGridReady()"
+      />
+    }
+  </div>
+</section>

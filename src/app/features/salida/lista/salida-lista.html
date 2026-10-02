@@ -1,0 +1,98 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Bandeja de salida</h1>
+      <p>Documentos que registraste y su avance con las personas a quienes los turnaste.</p>
+    </div>
+    <a class="btn btn--primary" routerLink="nuevo">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 5v14M5 12h14"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+      <span>Registrar documento</span>
+    </a>
+  </header>
+
+  <div class="tarjeta">
+    <div class="tabla-header">
+      <div class="tabla-header__titulo">
+        <h2>Mis registros</h2>
+        @if (!cargando() && !error()) {
+          <p>{{ registros().length }} {{ registros().length === 1 ? 'registro' : 'registros' }}</p>
+        }
+      </div>
+      <div class="filtros">
+        <select
+          [ngModel]="estatus()"
+          (ngModelChange)="onEstatusChange($event)"
+          aria-label="Filtrar por estatus"
+        >
+          <option value="pendientes">Pendientes</option>
+          <option value="concluidos">Concluidos</option>
+          <option value="cancelados">Cancelados</option>
+          <option value="todos">Todos</option>
+        </select>
+        <app-filtro-anio-mes
+          [anio]="anio()"
+          [mes]="mes()"
+          (anioChange)="onAnioChange($event)"
+          (mesChange)="onMesChange($event)"
+        />
+        <div class="tabla-header__busqueda">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+            <path
+              d="m20 20-3.2-3.2"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          <input
+            type="text"
+            placeholder="Filtrar resultados…"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event)"
+          />
+          @if (busqueda()) {
+            <button type="button" class="limpiar-busqueda" (click)="busqueda.set('')">✕</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <div class="tabla-skeleton">
+        <div class="tabla-skeleton__header"></div>
+        @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+          <div class="tabla-skeleton__row"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <p class="aviso aviso--error">{{ error() }}</p>
+    } @else if (registros().length === 0) {
+      <p class="aviso">No hay registros con estos filtros.</p>
+    } @else {
+      <ag-grid-angular
+        class="grid-ag"
+        [theme]="gridTheme"
+        [localeText]="localeText"
+        [rowData]="registros()"
+        [columnDefs]="columnas"
+        [rowClassRules]="clasesFila"
+        [quickFilterText]="busqueda()"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[20, 50, 100]"
+        [domLayout]="'autoHeight'"
+        [enableCellTextSelection]="true"
+        [ensureDomOrder]="true"
+        (gridReady)="onGridReady()"
+      />
+    }
+  </div>
+</section>

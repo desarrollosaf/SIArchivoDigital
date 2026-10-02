@@ -1,0 +1,80 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Reportes</h1>
+      <p>Avance de los documentos registrados en el periodo, por fecha de recepción.</p>
+    </div>
+  </header>
+
+  <div class="tarjeta">
+    <div class="filtros">
+      <label class="periodo">
+        <span>Desde</span>
+        <input type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+      </label>
+      <label class="periodo">
+        <span>Hasta</span>
+        <input type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+      </label>
+      @if (esAdmin) {
+        <label class="casilla">
+          <input type="checkbox" [ngModel]="todos()" (ngModelChange)="todos.set($event)" />
+          Todas las áreas
+        </label>
+      }
+      <button
+        type="button"
+        class="btn btn--primary btn--sm"
+        [disabled]="cargando()"
+        (click)="consultar()"
+      >
+        {{ cargando() ? 'Consultando…' : 'Consultar' }}
+      </button>
+      <button type="button" class="btn btn--outline btn--sm" (click)="descargarExcel()">
+        Descargar Excel
+      </button>
+    </div>
+  </div>
+
+  @if (resumen(); as r) {
+    <div class="cifras">
+      <div class="cifra">
+        <span class="cifra__valor">{{ r.total }}</span>
+        <span class="cifra__titulo">Registrados</span>
+      </div>
+      <div class="cifra cifra--ambar">
+        <span class="cifra__valor">{{ r.pendientes }}</span>
+        <span class="cifra__titulo">Pendientes</span>
+      </div>
+      <div class="cifra cifra--verde">
+        <span class="cifra__valor">{{ r.concluidos }}</span>
+        <span class="cifra__titulo">Concluidos ({{ porcentajeConcluido() }}%)</span>
+      </div>
+      <div class="cifra cifra--gris">
+        <span class="cifra__valor">{{ r.cancelados }}</span>
+        <span class="cifra__titulo">Cancelados</span>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Turnos de atención pendientes por persona</h2>
+      @if (r.pendientesPorPersona.length === 0) {
+        <p class="aviso">No hay turnos de atención pendientes en el periodo.</p>
+      } @else {
+        <ol class="ranking">
+          @for (p of r.pendientesPorPersona; track p.rfc) {
+            <li>
+              <span class="ranking__nombre">{{ p.nombre }}</span>
+              <span class="ranking__barra">
+                <span
+                  [style.width.%]="(p.pendientes / r.pendientesPorPersona[0].pendientes) * 100"
+                ></span>
+              </span>
+              <strong>{{ p.pendientes }}</strong>
+            </li>
+          }
+        </ol>
+      }
+    </div>
+  }
+</section>

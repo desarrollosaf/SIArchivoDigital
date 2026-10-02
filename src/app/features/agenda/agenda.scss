@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.leyenda {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--brand-muted);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  i {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+}

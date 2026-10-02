@@ -1,0 +1,456 @@
+<section class="pagina">
+  @if (cargando()) {
+    <div class="tarjeta"><p class="aviso">Cargando documento…</p></div>
+  } @else if (error()) {
+    <div class="tarjeta">
+      <p class="aviso aviso--error">{{ error() }}</p>
+      <a class="btn btn--outline btn--sm regresar" routerLink="/entrada">Ir a mi bandeja</a>
+    </div>
+  } @else if (registro(); as r) {
+    <header class="pagina__encabezado">
+      <div>
+        <p class="sobretitulo">{{ r.serie.nombre }}</p>
+        <h1>
+          Folio {{ r.folio }}
+          @switch (r.estatus) {
+            @case ('Cancelado') {
+              <span class="etiqueta etiqueta--gris">Cancelado</span>
+            }
+            @case ('Concluido') {
+              <span class="etiqueta etiqueta--verde">Concluido</span>
+            }
+            @default {
+              <span
+                class="etiqueta"
+                [class.etiqueta--roja]="(r.diasRestantes ?? 99) <= 2"
+                [class.etiqueta--ambar]="(r.diasRestantes ?? 99) > 2"
+              >
+                Pendiente{{
+                  r.diasRestantes !== null
+                    ? r.diasRestantes < 0
+                      ? ' · vencido'
+                      : ' · ' + r.diasRestantes + ' días'
+                    : ''
+                }}
+              </span>
+            }
+          }
+        </h1>
+        <p>
+          Registrado por {{ r.registradoPor?.nombre ?? 'sin dato' }} el
+          {{ r.creado | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      </div>
+      <div class="pagina__acciones">
+        @if (r.tieneArchivo) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="verDocumento()">
+            Ver documento
+          </button>
+        }
+        @if (puedeTurnar()) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="abrirTurnar()">
+            Turnar
+          </button>
+        }
+        @if (r.permisos.editar) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="irAEditar()">
+            Editar
+          </button>
+        }
+        @if (r.permisos.cancelar) {
+          <button type="button" class="btn btn--peligro btn--sm" (click)="cancelarRegistro()">
+            Cancelar registro
+          </button>
+        }
+        @if (puedeConcluir()) {
+          <button type="button" class="btn btn--primary btn--sm" (click)="abrirConcluir()">
+            {{ miTurno()?.tipo === 'A' ? 'Concluir mi turno' : 'Marcar como leído' }}
+          </button>
+        }
+      </div>
+    </header>
+
+    @if (r.permisos.soloLectura) {
+      <p class="aviso aviso--caja">Consulta en modo de solo lectura (lector delegado).</p>
+    }
+
+    <div class="tarjeta">
+      <dl class="datos">
+        <div>
+          <dt>Remitente</dt>
+          <dd>{{ r.remitente.nombre }}</dd>
+        </div>
+        <div>
+          <dt>Referencia</dt>
+          <dd>{{ r.referenciaDocumento || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Prioridad</dt>
+          <dd>{{ r.tipoAtencion.nombre }}</dd>
+        </div>
+        <div>
+          <dt>Fecha de recepción</dt>
+          <dd>{{ fechaCorta(r.fechaRecepcion) }}</dd>
+        </div>
+        <div>
+          <dt>Fecha del documento</dt>
+          <dd>{{ fechaCorta(r.fechaDocumento) || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Fecha límite</dt>
+          <dd>
+            {{ fechaCorta(r.fechaLimiteAtencion) }}
+            @if (r.horaInicio) {
+              · {{ r.horaInicio }}
+              @if (r.horaTermino) {
+                –{{ r.horaTermino }}
+              }
+            }
+          </dd>
+        </div>
+        @if (r.nombreEvento) {
+          <div>
+            <dt>Evento</dt>
+            <dd>{{ r.nombreEvento }}</dd>
+          </div>
+        }
+        @if (r.fojas) {
+          <div>
+            <dt>Fojas</dt>
+            <dd>{{ r.fojas }}</dd>
+          </div>
+        }
+        @if (r.folioRastreo) {
+          <div>
+            <dt>Seguimiento de</dt>
+            <dd>
+              <a [routerLink]="['/documentos', r.folioRastreo.id]">{{ r.folioRastreo.folio }}</a>
+            </dd>
+          </div>
+        }
+      </dl>
+      <div class="texto-largo">
+        <h3>Asunto</h3>
+        <p>{{ r.asunto }}</p>
+        <h3>Indicaciones</h3>
+        <p>{{ r.indicaciones }}</p>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Turnos</h2>
+      @if (r.turnos.length === 0) {
+        <p class="aviso">Este documento no se turnó a nadie.</p>
+      } @else {
+        <div class="tabla-turnos">
+          <table>
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th>Para</th>
+                <th>Turnado por</th>
+                <th>Estado</th>
+                <th>Conclusión</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of r.turnos; track t.id) {
+                <tr [class.inactivo]="!t.activo">
+                  <td>
+                    <strong>{{ t.nombre }}</strong>
+                    @if (t.indicaciones) {
+                      <small>“{{ t.indicaciones }}”</small>
+                    }
+                  </td>
+                  <td>
+                    <span
+                      class="etiqueta"
+                      [class.etiqueta--vino]="t.tipo === 'A'"
+                      [class.etiqueta--azul]="t.tipo === 'C'"
+                    >
+                      {{ t.tipo === 'A' ? 'Atención' : 'Conocimiento' }}
+                    </span>
+                  </td>
+                  <td>{{ t.turnadoPor?.nombre ?? 'Registro inicial' }}</td>
+                  <td>
+                    @if (t.atendido) {
+                      <span class="etiqueta etiqueta--verde">Atendido</span>
+                    } @else if (t.visto) {
+                      <span class="etiqueta etiqueta--ambar">Visto</span>
+                    } @else {
+                      <span class="etiqueta etiqueta--gris">Sin abrir</span>
+                    }
+                  </td>
+                  <td>
+                    {{ t.comentarioConclusion || '' }}
+                    @if (t.tieneConclusion) {
+                      <button type="button" class="enlace" (click)="verConclusion(t.id)">
+                        Ver archivo
+                      </button>
+                    }
+                  </td>
+                  <td>
+                    @if (t.puedeCancelar) {
+                      <button
+                        type="button"
+                        class="enlace enlace--peligro"
+                        (click)="quitarTurno(t.id, t.nombre)"
+                      >
+                        Quitar
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="tarjeta">
+      <h2>Comentarios</h2>
+      @if (r.comentarios.length === 0) {
+        <p class="aviso">Aún no hay comentarios.</p>
+      }
+      <ul class="hilo">
+        @for (c of r.comentarios; track c.id) {
+          <li class="mensaje">
+            <div class="mensaje__encabezado">
+              <strong>{{ c.autor.nombre ?? c.autor.rfc }}</strong>
+              @if (c.para) {
+                <span>para {{ c.para.nombre ?? c.para.rfc }}</span>
+              }
+              <small>{{ c.fecha | date: 'dd/MM/yyyy HH:mm' }}</small>
+            </div>
+            <p>{{ c.texto }}</p>
+            @if (c.tieneArchivo) {
+              <button type="button" class="enlace" (click)="verAdjuntoComentario(c.id)">
+                Ver adjunto
+              </button>
+            }
+            @for (resp of c.respuestas; track resp.id) {
+              <div class="mensaje mensaje--respuesta">
+                <div class="mensaje__encabezado">
+                  <strong>{{ resp.autor.nombre ?? resp.autor.rfc }}</strong>
+                  <small>{{ resp.fecha | date: 'dd/MM/yyyy HH:mm' }}</small>
+                </div>
+                <p>{{ resp.texto }}</p>
+                @if (resp.tieneArchivo) {
+                  <button type="button" class="enlace" (click)="verAdjuntoRespuesta(resp.id)">
+                    Ver adjunto
+                  </button>
+                }
+              </div>
+            }
+            @if (r.permisos.comentar) {
+              @if (respondiendoA() === c.id) {
+                <div class="responder">
+                  <textarea
+                    rows="2"
+                    placeholder="Escribe tu respuesta…"
+                    [ngModel]="respuestaTexto()"
+                    (ngModelChange)="respuestaTexto.set($event)"
+                  ></textarea>
+                  <div class="responder__acciones">
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm"
+                      (click)="respondiendoA.set(null)"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--primary btn--sm"
+                      [disabled]="enviando()"
+                      (click)="responder(c)"
+                    >
+                      Responder
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="enlace"
+                  (click)="respondiendoA.set(c.id); respuestaTexto.set('')"
+                >
+                  Responder
+                </button>
+              }
+            }
+          </li>
+        }
+      </ul>
+
+      @if (r.permisos.comentar) {
+        <div class="nuevo-comentario">
+          <div class="formulario">
+            <div class="campo campo--completo">
+              <label for="c-texto">Nuevo comentario</label>
+              <textarea
+                id="c-texto"
+                rows="3"
+                [ngModel]="comentarioTexto()"
+                (ngModelChange)="comentarioTexto.set($event)"
+              ></textarea>
+            </div>
+            <div class="campo">
+              <span class="campo__etiqueta">Dirigido a (opcional)</span>
+              <app-persona-picker
+                [multiple]="false"
+                [extras]="participantes()"
+                placeholder="Elige a una persona del turno…"
+                [seleccion]="comentarioPara()"
+                (seleccionChange)="comentarioPara.set($event)"
+              />
+            </div>
+            <div class="campo">
+              <span class="campo__etiqueta">Adjunto (opcional)</span>
+              <app-file-upload
+                variant="list"
+                [multiple]="false"
+                [files]="comentarioArchivos()"
+                (filesChange)="comentarioArchivos.set(ultimoArchivo($event))"
+              />
+            </div>
+          </div>
+          <div class="acciones-formulario">
+            <button
+              type="button"
+              class="btn btn--primary btn--sm"
+              [disabled]="enviando()"
+              (click)="comentar()"
+            >
+              Publicar comentario
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (modal() === 'turnar') {
+      <app-modal titulo="Turnar documento" ancho="ancho" (cerrar)="modal.set(null)">
+        <div class="formulario formulario--1">
+          <div class="campo">
+            <span class="campo__etiqueta">Para su atención</span>
+            <app-persona-picker
+              [seleccion]="turnarAtencion()"
+              (seleccionChange)="turnarAtencion.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <span class="campo__etiqueta">Para su conocimiento</span>
+            <app-persona-picker
+              [seleccion]="turnarConocimiento()"
+              (seleccionChange)="turnarConocimiento.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="t-indicaciones">Indicaciones</label>
+            <textarea
+              id="t-indicaciones"
+              rows="3"
+              [ngModel]="turnarIndicaciones()"
+              (ngModelChange)="turnarIndicaciones.set($event)"
+            ></textarea>
+          </div>
+        </div>
+        <div class="acciones-formulario">
+          <button type="button" class="btn btn--outline" (click)="modal.set(null)">Cancelar</button>
+          <button type="button" class="btn btn--primary" [disabled]="enviando()" (click)="turnar()">
+            {{ enviando() ? 'Turnando…' : 'Turnar' }}
+          </button>
+        </div>
+      </app-modal>
+    }
+
+    @if (modal() === 'concluir') {
+      <app-modal
+        [titulo]="miTurno()?.tipo === 'A' ? 'Concluir mi turno' : 'Marcar como leído'"
+        ancho="ancho"
+        (cerrar)="modal.set(null)"
+      >
+        <div class="formulario formulario--1">
+          <div class="campo">
+            <label for="k-comentario">Comentario de conclusión</label>
+            <textarea
+              id="k-comentario"
+              rows="3"
+              maxlength="255"
+              [ngModel]="conclusionComentario()"
+              (ngModelChange)="conclusionComentario.set($event)"
+            ></textarea>
+            <span class="campo__ayuda"
+              >Máximo 255 caracteres. Obligatorio si no adjuntas un documento.</span
+            >
+          </div>
+          <div class="campo">
+            <span class="campo__etiqueta">Documento de respuesta (opcional)</span>
+            <app-file-upload
+              variant="list"
+              [multiple]="false"
+              [files]="conclusionArchivos()"
+              (filesChange)="conclusionArchivos.set(ultimoArchivo($event))"
+            />
+          </div>
+        </div>
+        @if (secciones().length) {
+          <h3 class="subtitulo-modal">Clasificación archivística (opcional)</h3>
+          <div class="formulario formulario--3">
+            <div class="campo">
+              <label for="k-seccion">Sección</label>
+              <select id="k-seccion" [ngModel]="seccionId()" (ngModelChange)="onSeccion($event)">
+                <option [ngValue]="null">Sin clasificar</option>
+                @for (s of secciones(); track s.id) {
+                  <option [ngValue]="s.id">{{ s.codigo }} · {{ s.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="campo">
+              <label for="k-serie">Serie</label>
+              <select
+                id="k-serie"
+                [disabled]="!seccionId()"
+                [ngModel]="serieId()"
+                (ngModelChange)="onSerie($event)"
+              >
+                <option [ngValue]="null">—</option>
+                @for (s of seriesClasificacion(); track s.id) {
+                  <option [ngValue]="s.id">{{ s.codigo }} · {{ s.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="campo">
+              <label for="k-subserie">Subserie</label>
+              <select
+                id="k-subserie"
+                [disabled]="!serieId()"
+                [ngModel]="subserieId()"
+                (ngModelChange)="subserieId.set($event)"
+              >
+                <option [ngValue]="null">—</option>
+                @for (s of subseries(); track s.id) {
+                  <option [ngValue]="s.id">{{ s.codigo }} · {{ s.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        }
+        <div class="acciones-formulario">
+          <button type="button" class="btn btn--outline" (click)="modal.set(null)">Cancelar</button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="enviando()"
+            (click)="concluir()"
+          >
+            {{ enviando() ? 'Guardando…' : 'Concluir' }}
+          </button>
+        </div>
+      </app-modal>
+    }
+  }
+</section>

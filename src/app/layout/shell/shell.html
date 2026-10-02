@@ -1,0 +1,238 @@
+<div class="shell">
+  <nav class="navbar navbar-expand-lg topbar sticky-top">
+    <div class="container-fluid px-3 px-lg-4">
+      <a class="navbar-brand topbar__brand" routerLink="/home">
+        <img
+          class="topbar__logo"
+          src="assets/congreso-edomex-logo.png"
+          alt="Congreso del Estado de México"
+        />
+        <span class="topbar__divider d-none d-sm-block" aria-hidden="true"></span>
+        <span class="topbar__title"
+          >SIArchivoDigital<br /><small>Secretaría de Administración y Finanzas</small></span
+        >
+      </a>
+
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNav"
+        aria-controls="mainNav"
+        aria-expanded="false"
+        aria-label="Abrir menú"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav topbar__nav mx-lg-auto my-3 my-lg-0">
+          @for (item of nav(); track item.label) {
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                (click)="$event.preventDefault()"
+              >
+                {{ item.label }}
+              </a>
+              <ul class="dropdown-menu">
+                @for (child of item.children; track child.label) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      [routerLink]="child.route"
+                      routerLinkActive="active"
+                      [routerLinkActiveOptions]="{ exact: true }"
+                      (click)="cerrarMenuMovil()"
+                      >{{ child.label }}</a
+                    >
+                  </li>
+                }
+              </ul>
+            </li>
+          }
+        </ul>
+
+        <div
+          class="topbar__user d-flex align-items-center justify-content-between justify-content-lg-end gap-3"
+        >
+          <div class="notificaciones">
+            <button
+              type="button"
+              class="campanita"
+              [class.campanita--activa]="resumen().total > 0"
+              (click)="alternarPanel()"
+              [attr.aria-label]="
+                resumen().total > 0
+                  ? resumen().total + ' notificaciones sin leer'
+                  : 'Sin notificaciones'
+              "
+              [attr.aria-expanded]="panelAbierto()"
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 3a5 5 0 0 0-5 5v2.586c0 .53-.211 1.039-.586 1.414L5 13.414A2 2 0 0 0 6.414 17H17.586A2 2 0 0 0 19 13.414l-1.414-1.414A2 2 0 0 1 17 10.586V8a5 5 0 0 0-5-5Z"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.5 17a2.5 2.5 0 0 0 5 0"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+              </svg>
+              @if (resumen().total > 0) {
+                <span class="campanita__badge">{{ etiquetaNotificaciones() }}</span>
+              }
+            </button>
+
+            @if (panelAbierto()) {
+              <div class="panel-notificaciones" role="dialog" aria-label="Notificaciones">
+                <header class="panel-notificaciones__encabezado">
+                  <strong>Notificaciones</strong>
+                  @if (notificaciones().length) {
+                    <button type="button" (click)="marcarTodasLeidas()">
+                      Marcar todas como leídas
+                    </button>
+                  }
+                </header>
+                @if (cargandoNotificaciones()) {
+                  <p class="panel-notificaciones__vacio">Cargando…</p>
+                } @else if (notificaciones().length === 0) {
+                  <p class="panel-notificaciones__vacio">No tienes notificaciones pendientes.</p>
+                } @else {
+                  <ul>
+                    @for (n of notificaciones(); track n.tipo + n.id) {
+                      <li>
+                        <button type="button" (click)="abrirNotificacion(n)">
+                          <span class="panel-notificaciones__folio">{{ n.folio }}</span>
+                          <span
+                            >{{ n.detalle }}
+                            @if (n.de) {
+                              · {{ n.de }}
+                            }
+                          </span>
+                          <small>{{ n.fecha | date: 'dd/MM/yyyy HH:mm' }}</small>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          </div>
+
+          @if (user(); as u) {
+            <span class="topbar__username">{{ u.nombre }}</span>
+          }
+          <button type="button" class="logout" (click)="logout()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H9"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+              <path
+                d="M14 8l4.5 4-4.5 4M18.2 12H9.5"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__info text-center text-lg-start">
+        <p class="site-footer__copy mb-1">
+          © 2026 Secretaría de Administración y Finanzas del Estado de México. Todos los derechos
+          reservados.
+        </p>
+        <p class="mb-0">Av. Independencia No. 102, Col. Centro, C.P. 50000</p>
+        <p class="mb-0">Toluca de Lerdo, Estado de México</p>
+        <p class="mb-0">Conmutador (722) 279-6400</p>
+      </div>
+
+      <img
+        class="site-footer__logo"
+        src="assets/logo-animado.gif"
+        alt="Congreso del Estado de México"
+        loading="lazy"
+      />
+
+      <div class="site-footer__social text-center text-lg-end">
+        <span class="site-footer__social-label d-block mb-2">Síguenos en redes sociales:</span>
+        <div class="d-flex justify-content-center justify-content-lg-end gap-2">
+          <a
+            class="site-footer__social-link"
+            href="https://www.facebook.com/people/SAF-del-Poder-Legislativo-del-Estado-de-M%C3%A9xico/100063495426254/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook de SAF del Poder Legislativo"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M22 12.06C22 6.48 17.52 2 11.94 2S1.88 6.48 1.88 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.42V9.85c0-2.39 1.42-3.72 3.6-3.72 1.04 0 2.13.19 2.13.19v2.35h-1.2c-1.18 0-1.55.74-1.55 1.5v1.8h2.64l-.42 2.91h-2.22V22c4.78-.76 8.44-4.92 8.44-9.94Z"
+                fill="currentColor"
+              />
+            </svg>
+          </a>
+          <a
+            class="site-footer__social-link"
+            href="https://x.com/RedesSaf"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="X (Twitter) de RedesSaf"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M18.9 3H21.6l-6.06 6.93L22.7 21h-5.6l-4.38-5.73L7.7 21H5l6.49-7.42L4.3 3h5.74l3.96 5.24L18.9 3Zm-1 16.17h1.5L8.16 4.75H6.56l11.34 14.42Z"
+                fill="currentColor"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  @if (inactivity.showWarning()) {
+    <div class="idle-overlay" role="alertdialog" aria-modal="true" aria-labelledby="idle-title">
+      <div class="idle-modal">
+        <h2 id="idle-title">¿Sigues ahí?</h2>
+        <p>
+          Por tu seguridad, la sesión se cerrará por inactividad en
+          <strong>{{ inactivity.secondsRemaining() }}</strong> segundos.
+        </p>
+        <div class="idle-modal__actions">
+          <button type="button" class="btn btn--primary" (click)="inactivity.staySignedIn()">
+            Seguir conectado
+          </button>
+          <button type="button" class="btn btn--outline" (click)="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

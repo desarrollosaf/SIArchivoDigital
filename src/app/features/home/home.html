@@ -1,0 +1,59 @@
+<section class="pagina">
+  <header class="bienvenida">
+    <span class="bienvenida__marca">Archivo Digital</span>
+    <h1>Hola{{ user()?.nombre ? ', ' + user()!.nombre : '' }}</h1>
+    <p>Registra, turna y da seguimiento a la documentación de tu área.</p>
+  </header>
+
+  @if (error()) {
+    <p class="aviso aviso--error aviso--caja">
+      No se pudieron cargar tus contadores. Intenta recargar la página.
+    </p>
+  }
+
+  <div class="indicadores">
+    <a class="indicador" routerLink="/entrada">
+      <span class="indicador__valor">{{ resumen()?.pendientes ?? '—' }}</span>
+      <span class="indicador__titulo">Turnos por atender</span>
+      <span class="indicador__detalle">{{ resumen()?.paraAtencion ?? 0 }} para atención</span>
+    </a>
+    <a
+      class="indicador"
+      [class.indicador--alerta]="(resumen()?.vencidos ?? 0) > 0"
+      routerLink="/entrada"
+    >
+      <span class="indicador__valor">{{ resumen()?.vencidos ?? '—' }}</span>
+      <span class="indicador__titulo">Fuera de plazo</span>
+      <span class="indicador__detalle">Su fecha límite ya pasó</span>
+    </a>
+    <a class="indicador" routerLink="/entrada">
+      <span class="indicador__valor">{{ resumen()?.sinLeer ?? '—' }}</span>
+      <span class="indicador__titulo">Sin abrir</span>
+      <span class="indicador__detalle">Turnos que aún no consultas</span>
+    </a>
+    <a class="indicador" routerLink="/salida">
+      <span class="indicador__valor">{{ resumen()?.misPendientes ?? '—' }}</span>
+      <span class="indicador__titulo">Mis registros pendientes</span>
+      <span class="indicador__detalle">Esperando respuesta de los turnados</span>
+    </a>
+  </div>
+
+  <div class="accesos">
+    <a class="acceso" routerLink="/salida/nuevo">
+      <strong>Registrar documento</strong>
+      <span>Captura un oficio, asigna folio y túrnalo.</span>
+    </a>
+    <a class="acceso" routerLink="/entrada">
+      <strong>Bandeja de entrada</strong>
+      <span>Atiende, turna o concluye lo que te enviaron.</span>
+    </a>
+    <a class="acceso" routerLink="/busqueda">
+      <strong>Buscar un folio</strong>
+      <span>Por folio, referencia, asunto o remitente.</span>
+    </a>
+    <a class="acceso" routerLink="/agenda">
+      <strong>Agenda</strong>
+      <span>Fechas límite de atención en calendario.</span>
+    </a>
+  </div>
+</section>

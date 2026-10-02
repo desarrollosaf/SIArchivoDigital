@@ -1,0 +1,138 @@
+<section class="roles-page">
+  <header class="roles-page__header">
+    <h1>Roles de usuario</h1>
+    <p>Asigna un rol a cada persona para controlar lo que puede ver en el sistema.</p>
+  </header>
+
+  <div class="card">
+    <h2>Asignar rol</h2>
+
+    <div class="asignar-form">
+      <div class="combobox">
+        <label for="usuario-busqueda">Usuario</label>
+        <input
+          id="usuario-busqueda"
+          type="text"
+          autocomplete="off"
+          placeholder="Busca por nombre o RFC…"
+          [ngModel]="query()"
+          (ngModelChange)="onQueryChange($event)"
+          (focus)="mostrarResultados.set(true)"
+          (blur)="onQueryBlur()"
+        />
+
+        @if (mostrarResultados() && query().trim().length >= 2) {
+          <ul class="combobox__dropdown">
+            @if (buscando()) {
+              <li class="combobox__hint">Buscando…</li>
+            } @else if (resultados().length === 0) {
+              <li class="combobox__hint">Sin resultados</li>
+            } @else {
+              @for (usuario of resultados(); track usuario.rfc) {
+                <li>
+                  <button type="button" (mousedown)="seleccionarUsuario(usuario)">
+                    <span class="combobox__nombre">{{ usuario.nombre }}</span>
+                    <span class="combobox__meta">{{ usuario.rfc }} · {{ usuario.puesto }}</span>
+                  </button>
+                </li>
+              }
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="rol-select">
+        <label for="rol-select">Rol</label>
+        <select
+          id="rol-select"
+          [ngModel]="rolSeleccionadoId()"
+          (ngModelChange)="rolSeleccionadoId.set($event)"
+        >
+          <option [ngValue]="null" disabled>Selecciona un rol</option>
+          @for (rol of roles(); track rol.id) {
+            <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="!usuarioSeleccionado() || !rolSeleccionadoId() || guardando()"
+        (click)="asignar()"
+      >
+        @if (guardando()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Guardando…</span>
+        } @else {
+          <span>Asignar rol</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabla-header">
+      <div class="tabla-header__titulo">
+        <h2>Roles asignados</h2>
+        @if (!cargandoAsignaciones()) {
+          <p>
+            {{ asignaciones().length }} {{ asignaciones().length === 1 ? 'registro' : 'registros' }}
+          </p>
+        }
+      </div>
+      @if (!cargandoAsignaciones() && asignaciones().length > 0) {
+        <div class="tabla-header__busqueda">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+            <path
+              d="m20 20-3.2-3.2"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, RFC o rol…"
+            [ngModel]="busquedaTabla()"
+            (ngModelChange)="onBusquedaTablaChange($event)"
+          />
+          @if (busquedaTabla()) {
+            <button type="button" class="limpiar-busqueda" (click)="onBusquedaTablaChange('')">
+              ✕
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    @if (cargandoAsignaciones()) {
+      <div class="tabla-skeleton">
+        <div class="tabla-skeleton__header"></div>
+        @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+          <div class="tabla-skeleton__row"></div>
+        }
+      </div>
+    } @else if (asignaciones().length === 0) {
+      <p class="hint">
+        Todavía no hay roles asignados. Por default, todos los usuarios son "Usuario".
+      </p>
+    } @else {
+      <ag-grid-angular
+        class="grid"
+        [theme]="gridTheme"
+        [localeText]="localeText"
+        [rowData]="asignaciones()"
+        [columnDefs]="columnas"
+        [quickFilterText]="busquedaTabla()"
+        [pagination]="true"
+        [paginationPageSize]="10"
+        [paginationPageSizeSelector]="[10, 20, 50]"
+        [domLayout]="'autoHeight'"
+        [enableCellTextSelection]="true"
+        [ensureDomOrder]="true"
+      />
+    }
+  </div>
+</section>

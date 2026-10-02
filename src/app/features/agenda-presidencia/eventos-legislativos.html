@@ -1,0 +1,249 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Eventos legislativos</h1>
+      <p>Sesiones, comisiones y comparecencias que aparecen en la agenda legislativa.</p>
+    </div>
+    <div class="pagina__acciones">
+      <div class="filtros">
+        <select [ngModel]="anio()" (ngModelChange)="cambiarAnio($event)" aria-label="Año">
+          @for (a of anios; track a) {
+            <option [ngValue]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+      <button type="button" class="btn btn--primary" (click)="nuevo()">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span>Nuevo evento</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="tarjeta">
+    @if (cargando()) {
+      <p class="aviso">Cargando eventos…</p>
+    } @else if (eventos().length === 0) {
+      <p class="aviso">No hay eventos legislativos en {{ anio() }}.</p>
+    } @else {
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Horario</th>
+              <th>Tipo</th>
+              <th>Evento</th>
+              <th>Sede</th>
+              <th>Integrantes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of eventos(); track e.id) {
+              <tr>
+                <td class="nowrap">{{ fechaCorta(e.fechaEvento) }}</td>
+                <td class="nowrap">{{ e.horaInicio }}–{{ e.horaTermino }}</td>
+                <td>
+                  <strong>{{ e.tipoEvento.nombre }}</strong>
+                  @if (e.tipoReunion.nombre) {
+                    <small>{{ e.tipoReunion.nombre }}</small>
+                  }
+                </td>
+                <td>
+                  {{ e.nombreEvento }}
+                  @if (e.materia && e.materia !== e.nombreEvento) {
+                    <small>{{ e.materia }}</small>
+                  }
+                </td>
+                <td>
+                  {{ e.sede.nombre }}
+                  @if (e.modalidad.nombre) {
+                    <small>{{ e.modalidad.nombre }}</small>
+                  }
+                </td>
+                <td>
+                  @if (e.tipoEvento.id === 1) {
+                    LXII Legislatura
+                  } @else {
+                    @for (c of e.comisiones; track c.id) {
+                      <small class="comision">{{ c.nombre }}</small>
+                    } @empty {
+                      —
+                    }
+                  }
+                </td>
+                <td class="acciones">
+                  <button type="button" class="enlace" (click)="editar(e)">Editar</button>
+                  <button type="button" class="enlace enlace--peligro" (click)="eliminar(e)">
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  @if (formulario(); as f) {
+    <app-modal
+      [titulo]="f.id ? 'Editar evento' : 'Nuevo evento legislativo'"
+      ancho="ancho"
+      (cerrar)="formulario.set(null)"
+    >
+      <div class="formulario formulario--3">
+        <div class="campo">
+          <label for="l-fecha">Fecha <span class="obligatorio">*</span></label>
+          <input
+            id="l-fecha"
+            type="date"
+            [min]="f.id ? null : hoy"
+            [ngModel]="f.fechaEvento"
+            (ngModelChange)="actualizar({ fechaEvento: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="l-inicio">Hora de inicio <span class="obligatorio">*</span></label>
+          <input
+            id="l-inicio"
+            type="time"
+            [ngModel]="f.horaInicio"
+            (ngModelChange)="actualizar({ horaInicio: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="l-termino">Hora de término <span class="obligatorio">*</span></label>
+          <input
+            id="l-termino"
+            type="time"
+            [ngModel]="f.horaTermino"
+            (ngModelChange)="actualizar({ horaTermino: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="l-tipo">Tipo de evento <span class="obligatorio">*</span></label>
+          <select
+            id="l-tipo"
+            [ngModel]="f.tipoEvento"
+            (ngModelChange)="actualizar({ tipoEvento: $event })"
+          >
+            <option [ngValue]="null" disabled>Selecciona</option>
+            @for (t of catalogos()?.tiposEvento ?? []; track t.id) {
+              <option [ngValue]="t.id">{{ t.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="l-sede">Sede <span class="obligatorio">*</span></label>
+          <select
+            id="l-sede"
+            [class.is-invalid]="disponibilidad()?.disponible === false"
+            [ngModel]="f.sede"
+            (ngModelChange)="actualizar({ sede: $event })"
+          >
+            <option [ngValue]="null" disabled>Selecciona</option>
+            @for (s of catalogos()?.sedes ?? []; track s.id) {
+              <option [ngValue]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="l-modalidad">Modalidad <span class="obligatorio">*</span></label>
+          <select
+            id="l-modalidad"
+            [ngModel]="f.modalidad"
+            (ngModelChange)="actualizar({ modalidad: $event })"
+          >
+            <option [ngValue]="null" disabled>Selecciona</option>
+            @for (m of catalogos()?.modalidades ?? []; track m.id) {
+              <option [ngValue]="m.id">{{ m.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        @if (disponibilidad(); as d) {
+          <div class="campo campo--completo">
+            @if (d.disponible) {
+              <p class="sede-libre">✓ La sede está libre en ese horario.</p>
+            } @else {
+              <p class="aviso aviso--error aviso--caja">
+                La sede no está disponible, ya existe un evento agendado:
+                @for (c of d.conflictos; track $index) {
+                  <br />{{ c.horario }} · {{ c.descripcion }}
+                }
+              </p>
+            }
+          </div>
+        }
+
+        @if (esComision()) {
+          <div class="campo campo--completo">
+            <span class="campo__etiqueta">Comisiones <span class="obligatorio">*</span></span>
+            <app-persona-picker
+              fuente="local"
+              [extras]="opcionesComision()"
+              placeholder="Busca la comisión…"
+              [seleccion]="f.comisiones"
+              (seleccionChange)="actualizar({ comisiones: $event })"
+            />
+          </div>
+          <div class="campo">
+            <label for="l-reunion">Tipo de reunión <span class="obligatorio">*</span></label>
+            <select
+              id="l-reunion"
+              [ngModel]="f.tipoReunion"
+              (ngModelChange)="actualizar({ tipoReunion: $event })"
+            >
+              <option [ngValue]="null" disabled>Selecciona</option>
+              @for (t of catalogos()?.tiposReunion ?? []; track t.id) {
+                <option [ngValue]="t.id">{{ t.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="campo campo--completo">
+          <label for="l-nombre">Nombre del evento <span class="obligatorio">*</span></label>
+          <input
+            id="l-nombre"
+            type="text"
+            [ngModel]="f.nombreEvento"
+            (ngModelChange)="actualizar({ nombreEvento: $event })"
+          />
+        </div>
+        @if (pideMateria()) {
+          <div class="campo campo--completo">
+            <label for="l-materia">
+              Materia
+              @if (materiaObligatoria()) {
+                <span class="obligatorio">*</span>
+              }
+            </label>
+            <textarea
+              id="l-materia"
+              rows="2"
+              [ngModel]="f.materia"
+              (ngModelChange)="actualizar({ materia: $event })"
+            ></textarea>
+          </div>
+        }
+      </div>
+      <div class="acciones-formulario">
+        <button type="button" class="btn btn--outline" (click)="formulario.set(null)">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
+          {{ guardando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+</section>

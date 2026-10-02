@@ -1,0 +1,109 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Bandeja de entrada</h1>
+      <p>Documentos que te turnaron para su atención o conocimiento.</p>
+    </div>
+    <div class="pestanas" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        [class.activa]="filtro() === 'pendientes'"
+        (click)="cambiarFiltro('pendientes')"
+      >
+        Pendientes
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [class.activa]="filtro() === 'atendidos'"
+        (click)="cambiarFiltro('atendidos')"
+      >
+        Atendidos
+      </button>
+    </div>
+  </header>
+
+  @if (soloLectura()) {
+    <p class="aviso aviso--caja">
+      Estás consultando la bandeja de tu titular en modo de solo lectura.
+    </p>
+  }
+
+  <div class="tarjeta">
+    <div class="tabla-header">
+      <div class="tabla-header__titulo">
+        <h2>{{ filtro() === 'pendientes' ? 'Turnos por atender' : 'Turnos atendidos' }}</h2>
+        @if (!cargando() && !error()) {
+          <p>{{ turnos().length }} {{ turnos().length === 1 ? 'turno' : 'turnos' }}</p>
+        }
+      </div>
+      <div class="filtros">
+        @if (filtro() === 'atendidos') {
+          <app-filtro-anio-mes
+            [anio]="anio()"
+            [mes]="mes()"
+            (anioChange)="onAnioChange($event)"
+            (mesChange)="onMesChange($event)"
+          />
+        }
+        <div class="tabla-header__busqueda">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+            <path
+              d="m20 20-3.2-3.2"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          <input
+            type="text"
+            placeholder="Filtrar por folio, asunto, remitente…"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event)"
+          />
+          @if (busqueda()) {
+            <button type="button" class="limpiar-busqueda" (click)="busqueda.set('')">✕</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <div class="tabla-skeleton">
+        <div class="tabla-skeleton__header"></div>
+        @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+          <div class="tabla-skeleton__row"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <p class="aviso aviso--error">{{ error() }}</p>
+    } @else if (turnos().length === 0) {
+      <p class="aviso">
+        {{
+          filtro() === 'pendientes'
+            ? 'No tienes turnos pendientes. ¡Todo al día!'
+            : 'No hay turnos atendidos en este periodo.'
+        }}
+      </p>
+    } @else {
+      <ag-grid-angular
+        class="grid-ag"
+        [theme]="gridTheme"
+        [localeText]="localeText"
+        [rowData]="turnos()"
+        [columnDefs]="columnas"
+        [rowClassRules]="clasesFila"
+        [quickFilterText]="busqueda()"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[20, 50, 100]"
+        [domLayout]="'autoHeight'"
+        [enableCellTextSelection]="true"
+        [ensureDomOrder]="true"
+        (gridReady)="onGridReady()"
+      />
+    }
+  </div>
+</section>

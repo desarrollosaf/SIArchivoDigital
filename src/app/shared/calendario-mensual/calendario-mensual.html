@@ -1,0 +1,70 @@
+<div class="barra">
+  <div class="barra__navegacion">
+    <button
+      type="button"
+      class="btn btn--outline btn--sm"
+      (click)="mover(-1)"
+      aria-label="Mes anterior"
+    >
+      ‹
+    </button>
+    <button type="button" class="btn btn--outline btn--sm" (click)="irAHoy()">Hoy</button>
+    <button
+      type="button"
+      class="btn btn--outline btn--sm"
+      (click)="mover(1)"
+      aria-label="Mes siguiente"
+    >
+      ›
+    </button>
+  </div>
+  <h2>{{ titulo() }}</h2>
+  <span class="barra__estado">
+    @if (cargando()) {
+      Cargando…
+    } @else if (error()) {
+      No se pudieron cargar los eventos
+    } @else {
+      {{ eventos().length }} eventos
+    }
+  </span>
+</div>
+
+<div class="calendario" role="grid">
+  @for (d of diasSemana; track d) {
+    <div class="calendario__dia-semana" role="columnheader">{{ d }}</div>
+  }
+  @for (semana of semanas(); track $index) {
+    @for (dia of semana; track dia.fecha) {
+      <div
+        class="dia"
+        role="gridcell"
+        tabindex="0"
+        [class.dia--fuera]="!dia.delMes"
+        [class.dia--hoy]="dia.hoy"
+        [class.dia--seleccionado]="diaSeleccionado() === dia.fecha"
+        (click)="elegirDia(dia.fecha)"
+        (keydown.enter)="elegirDia(dia.fecha)"
+      >
+        <span class="dia__numero">{{ dia.numero }}</span>
+        @for (e of dia.eventos.slice(0, maxPorDia()); track e.id) {
+          <button
+            type="button"
+            class="dia__evento"
+            [title]="e.titulo"
+            (click)="elegirEvento($event, e.id)"
+          >
+            <i [style.background]="e.color"></i>
+            @if (e.hora) {
+              <small>{{ e.hora }}</small>
+            }
+            <span>{{ e.titulo }}</span>
+          </button>
+        }
+        @if (dia.eventos.length > maxPorDia()) {
+          <span class="dia__mas">+{{ dia.eventos.length - maxPorDia() }} más</span>
+        }
+      </div>
+    }
+  }
+</div>

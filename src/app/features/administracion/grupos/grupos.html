@@ -1,0 +1,91 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Grupos de destinatarios</h1>
+      <p>Al turnar a un grupo, el documento llega a cada uno de sus integrantes.</p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="nuevo()">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 5v14M5 12h14"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+      <span>Nuevo grupo</span>
+    </button>
+  </header>
+
+  @if (cargando()) {
+    <div class="tarjeta"><p class="aviso">Cargando…</p></div>
+  } @else if (grupos().length === 0) {
+    <div class="tarjeta">
+      <p class="aviso">Todavía no hay grupos. Crea uno para turnar a varias personas a la vez.</p>
+    </div>
+  } @else {
+    <div class="grupos">
+      @for (g of grupos(); track g.id) {
+        <article class="tarjeta grupo">
+          <header>
+            <h2>{{ g.grupo }}</h2>
+            <span class="etiqueta etiqueta--vino"
+              >{{ g.miembros.length }}
+              {{ g.miembros.length === 1 ? 'integrante' : 'integrantes' }}</span
+            >
+          </header>
+          <ul>
+            @for (m of g.miembros; track m.rfc) {
+              <li>{{ m.nombre }}</li>
+            }
+          </ul>
+          <footer>
+            <button type="button" class="btn btn--outline btn--sm" (click)="editar(g)">
+              Editar
+            </button>
+            <button type="button" class="btn btn--peligro btn--sm" (click)="eliminar(g)">
+              Eliminar
+            </button>
+          </footer>
+        </article>
+      }
+    </div>
+  }
+
+  @if (editando(); as e) {
+    <app-modal
+      [titulo]="e.id ? 'Editar grupo' : 'Nuevo grupo'"
+      ancho="ancho"
+      (cerrar)="editando.set(null)"
+    >
+      <div class="formulario formulario--1">
+        <div class="campo">
+          <label for="g-nombre">Nombre del grupo <span class="obligatorio">*</span></label>
+          <input
+            id="g-nombre"
+            type="text"
+            maxlength="255"
+            [ngModel]="nombre()"
+            (ngModelChange)="nombre.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <span class="campo__etiqueta">Integrantes <span class="obligatorio">*</span></span>
+          <app-persona-picker
+            fuente="servidores"
+            [seleccion]="miembros()"
+            (seleccionChange)="miembros.set($event)"
+          />
+        </div>
+      </div>
+      <div class="acciones-formulario">
+        <button type="button" class="btn btn--outline" (click)="editando.set(null)">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
+          Guardar
+        </button>
+      </div>
+    </app-modal>
+  }
+</section>

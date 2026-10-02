@@ -1,0 +1,62 @@
+# Ambiente local completo con base de datos propia. Se usa junto con docker-compose.yml:
+#
+#   ARCHIVO_DUMP=/ruta/al/dump-adminplem_archivoDigital.sql \
+#   SAF_DUMP=/ruta/al/dump-adminplem_saf.sql \
+#   LEGISLATIVO_DUMP=/ruta/al/dump-adminplem_congresoedomex.sql \
+#     docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
+# La primera vez MariaDB restaura los respaldos. Sin SAF_DUMP crea una base adminplem_saf de
+# PRUEBA (backend/scripts/saf-prueba.sql) con usuarios ficticios, contraseña prueba123; sin
+# LEGISLATIVO_DUMP, un catálogo de comisiones de prueba (backend/scripts/legislativo-prueba.sql).
+services:
+  db:
+    image: mariadb:10.5
+    container_name: siarchivodigital-db
+    environment:
+      MARIADB_ROOT_PASSWORD: archivo_local
+      MARIADB_DATABASE: adminplem_archivoDigital
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      # Solo accesible desde esta máquina: el respaldo trae datos personales.
+      - "127.0.0.1:3398:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ${ARCHIVO_DUMP:?Indica la ruta del respaldo en ARCHIVO_DUMP}:/docker-entrypoint-initdb.d/01-archivo.sql:ro
+      - ./backend/scripts/cargar-bases.sh:/docker-entrypoint-initdb.d/02-bases.sh:ro
+      - ${SAF_DUMP:-./backend/scripts/saf-prueba.sql}:/docker-entrypoint-initdb.d/saf/saf.sql:ro
+      - ${LEGISLATIVO_DUMP:-./backend/scripts/legislativo-prueba.sql}:/docker-entrypoint-initdb.d/legislativo/legislativo.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+  backend:
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USERNAME: root
+      DB_PASSWORD: archivo_local
+      DB_DATABASE: adminplem_archivoDigital
+      DB_EXTERNAL_HOST: db
+      DB_EXTERNAL_PORT: "3306"
+      DB_EXTERNAL_USERNAME: root
+      DB_EXTERNAL_PASSWORD: archivo_local
+      DB_EXTERNAL_DATABASE: adminplem_saf
+      DB_LEGISLATIVO_HOST: db
+      DB_LEGISLATIVO_PORT: "3306"
+      DB_LEGISLATIVO_USERNAME: root
+      DB_LEGISLATIVO_PASSWORD: archivo_local
+      DB_LEGISLATIVO_DATABASE: adminplem_congresoedomex
+    command: >
+      sh -c "npm install &&
+      npm run migrate &&
+      npm run seed &&
+      npm run start:dev"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

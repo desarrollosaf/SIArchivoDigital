@@ -1,0 +1,194 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Clasificación archivística</h1>
+      <p>Cuadro general de clasificación: secciones, series y subseries de cada área.</p>
+    </div>
+    <div class="filtros">
+      <select
+        [ngModel]="filtroDepartamento()"
+        (ngModelChange)="filtroDepartamento.set($event)"
+        aria-label="Filtrar por área"
+      >
+        <option [ngValue]="null">Todas las áreas</option>
+        @for (d of departamentosConSecciones(); track d.id) {
+          <option [ngValue]="d.id">{{ d.nombre }}</option>
+        }
+      </select>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <div class="tarjeta"><p class="aviso">Cargando…</p></div>
+  } @else {
+    <div class="columnas">
+      <div class="tarjeta columna">
+        <div class="columna__encabezado">
+          <h2>Secciones</h2>
+          <button type="button" class="btn btn--primary btn--sm" (click)="nuevo('seccion')">
+            Agregar
+          </button>
+        </div>
+        <ul class="lista">
+          @for (s of seccionesFiltradas(); track s.id) {
+            <li [class.seleccionado]="seccionSel()?.id === s.id" [class.inactivo]="!s.activo">
+              <button type="button" class="lista__principal" (click)="elegirSeccion(s)">
+                <strong>{{ s.codigo }}</strong> {{ s.seccion }}
+                <small>{{ s.departamento }} · {{ s.series }} series</small>
+              </button>
+              <div class="lista__acciones">
+                <button type="button" (click)="editarSeccion(s)">Editar</button>
+                <button type="button" (click)="alternar('seccion', s.id)">
+                  {{ s.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="vacio">No hay secciones.</li>
+          }
+        </ul>
+      </div>
+
+      <div class="tarjeta columna">
+        <div class="columna__encabezado">
+          <h2>Series</h2>
+          <button
+            type="button"
+            class="btn btn--primary btn--sm"
+            [disabled]="!seccionSel()"
+            (click)="nuevo('serie')"
+          >
+            Agregar
+          </button>
+        </div>
+        @if (!seccionSel()) {
+          <p class="aviso">Elige una sección.</p>
+        } @else {
+          <ul class="lista">
+            @for (s of series(); track s.id) {
+              <li [class.seleccionado]="serieSel()?.id === s.id" [class.inactivo]="!s.activo">
+                <button type="button" class="lista__principal" (click)="elegirSerie(s)">
+                  <strong>{{ s.codigo }}</strong> {{ s.serie }}
+                  <small
+                    >{{ s.subseries }} subseries · trámite {{ s.duracionSistema ?? 730 }} días{{
+                      s.horarios ? ' · con horario' : ''
+                    }}</small
+                  >
+                </button>
+                <div class="lista__acciones">
+                  <button type="button" (click)="editarSerie(s)">Editar</button>
+                  <button type="button" (click)="alternar('serie', s.id)">
+                    {{ s.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </div>
+              </li>
+            } @empty {
+              <li class="vacio">Esta sección no tiene series.</li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="tarjeta columna">
+        <div class="columna__encabezado">
+          <h2>Subseries</h2>
+          <button
+            type="button"
+            class="btn btn--primary btn--sm"
+            [disabled]="!serieSel()"
+            (click)="nuevo('subserie')"
+          >
+            Agregar
+          </button>
+        </div>
+        @if (!serieSel()) {
+          <p class="aviso">Elige una serie.</p>
+        } @else {
+          <ul class="lista">
+            @for (s of subseries(); track s.id) {
+              <li [class.inactivo]="!s.activo">
+                <div class="lista__principal">
+                  <strong>{{ s.codigo }}</strong> {{ s.subserie }}
+                </div>
+                <div class="lista__acciones">
+                  <button type="button" (click)="editarSubserie(s)">Editar</button>
+                  <button type="button" (click)="alternar('subserie', s.id)">
+                    {{ s.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </div>
+              </li>
+            } @empty {
+              <li class="vacio">Esta serie no tiene subseries.</li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+
+  @if (edicion(); as e) {
+    <app-modal [titulo]="tituloModal()" (cerrar)="edicion.set(null)">
+      <div class="formulario formulario--1">
+        @if (e.nivel === 'seccion') {
+          <div class="campo">
+            <label for="e-depto">Área <span class="obligatorio">*</span></label>
+            <select
+              id="e-depto"
+              [ngModel]="e.departamentoId"
+              (ngModelChange)="actualizar({ departamentoId: $event })"
+            >
+              <option [ngValue]="null" disabled>Selecciona el área</option>
+              @for (d of departamentos(); track d.id) {
+                <option [ngValue]="d.id">{{ d.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+        <div class="campo">
+          <label for="e-codigo">Código <span class="obligatorio">*</span></label>
+          <input
+            id="e-codigo"
+            type="text"
+            [ngModel]="e.codigo"
+            (ngModelChange)="actualizar({ codigo: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="e-nombre">Nombre <span class="obligatorio">*</span></label>
+          <input
+            id="e-nombre"
+            type="text"
+            [ngModel]="e.nombre"
+            (ngModelChange)="actualizar({ nombre: $event })"
+          />
+        </div>
+        @if (e.nivel === 'serie') {
+          <div class="campo">
+            <label for="e-duracion">Días en archivo de trámite</label>
+            <input
+              id="e-duracion"
+              type="number"
+              min="1"
+              [ngModel]="e.duracionSistema"
+              (ngModelChange)="actualizar({ duracionSistema: $event })"
+            />
+          </div>
+          <label class="casilla">
+            <input
+              type="checkbox"
+              [ngModel]="e.horarios"
+              (ngModelChange)="actualizar({ horarios: $event })"
+            />
+            Pide hora de inicio y término al registrar (eventos, reuniones)
+          </label>
+        }
+      </div>
+      <div class="acciones-formulario">
+        <button type="button" class="btn btn--outline" (click)="edicion.set(null)">Cancelar</button>
+        <button type="button" class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
+          Guardar
+        </button>
+      </div>
+    </app-modal>
+  }
+</section>

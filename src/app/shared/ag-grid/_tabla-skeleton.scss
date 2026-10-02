@@ -1,0 +1,31 @@
+.tabla-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tabla-skeleton__header,
+.tabla-skeleton__row {
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--brand-bg) 25%, #e9ece2 37%, var(--brand-bg) 63%);
+  background-size: 400% 100%;
+  animation: tabla-skeleton-shimmer 1.4s ease infinite;
+}
+
+.tabla-skeleton__header {
+  height: 38px;
+  opacity: 0.6;
+}
+
+.tabla-skeleton__row {
+  height: 48px;
+}
+
+@keyframes tabla-skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}

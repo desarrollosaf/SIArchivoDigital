@@ -1,0 +1,46 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Agenda</h1>
+      <p>Fechas límite de los documentos que registraste o que te turnaron.</p>
+    </div>
+    <div class="leyenda">
+      <span><i style="background: #f8d720"></i>Ordinario</span>
+      <span><i style="background: #f78300"></i>Urgente</span>
+      <span><i style="background: #56534f"></i>Concluido</span>
+    </div>
+  </header>
+
+  <div class="tarjeta">
+    <app-calendario-mensual
+      [eventos]="eventosCalendario()"
+      [cargando]="cargando()"
+      [error]="error()"
+      (rangoChange)="cargar($event)"
+      (diaChange)="diaSeleccionado.set($event)"
+      (eventoClick)="abrirEvento($event)"
+    />
+  </div>
+
+  @if (diaSeleccionado(); as dia) {
+    <div class="tarjeta">
+      <h2>Vencen el {{ fechaCorta(dia) }}</h2>
+      @if (eventosDelDia().length === 0) {
+        <p class="aviso">No hay fechas límite este día.</p>
+      } @else {
+        <ul class="lista-eventos">
+          @for (e of eventosDelDia(); track e.id) {
+            <li>
+              <span class="lista-eventos__color" [style.background]="e.color"></span>
+              <div>
+                <a [routerLink]="['/documentos', e.registroId]">{{ e.titulo }}</a>
+                <small>{{ horario(e) }}</small>
+                <p>{{ e.descripcion }}</p>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>

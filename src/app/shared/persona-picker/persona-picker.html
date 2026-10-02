@@ -1,0 +1,69 @@
+<div class="picker" [class.is-invalid]="invalid()" [class.is-disabled]="disabled()">
+  @if (seleccion().length) {
+    <ul class="picker__chips">
+      @for (p of seleccion(); track p.id) {
+        <li class="chip" [class.chip--grupo]="p.id.startsWith('G:')">
+          <span class="chip__texto">{{ p.nombre }}</span>
+          @if (!disabled()) {
+            <button
+              type="button"
+              class="chip__quitar"
+              (click)="quitar(p)"
+              [attr.aria-label]="'Quitar ' + p.nombre"
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (!disabled() && (multiple() || seleccion().length === 0)) {
+    <div class="picker__control">
+      <svg class="picker__icono" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+        <path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <input
+        type="text"
+        autocomplete="off"
+        [placeholder]="placeholder()"
+        [ngModel]="query()"
+        (ngModelChange)="onQueryChange($event)"
+        (focus)="abierto.set(true)"
+        (blur)="onBlur()"
+      />
+    </div>
+  }
+
+  @if (abierto() && (query().trim().length >= 2 || extras().length)) {
+    <ul class="picker__dropdown">
+      @if (buscando()) {
+        <li class="picker__hint">Buscando…</li>
+      } @else if (opciones().length === 0) {
+        <li class="picker__hint">
+          {{ query().trim().length >= 2 ? 'Sin resultados' : 'Escribe al menos 2 letras' }}
+        </li>
+      } @else {
+        @for (p of opciones(); track p.id) {
+          <li>
+            <button type="button" (mousedown)="elegir(p)">
+              <span class="picker__nombre">{{ p.nombre }}</span>
+              @if (p.detalle) {
+                <span class="picker__detalle">{{ p.detalle }}</span>
+              }
+            </button>
+          </li>
+        }
+      }
+    </ul>
+  }
+</div>

@@ -1,0 +1,51 @@
+:host {
+  display: block;
+}
+
+.reportes {
+  align-items: center;
+
+  .campo__ayuda {
+    margin-right: auto;
+  }
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem 1.25rem;
+  margin: 0;
+
+  &__completo {
+    grid-column: 1 / -1;
+  }
+
+  dt {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+  }
+
+  dd {
+    margin: 0.15rem 0 0;
+    font-size: 0.9rem;
+    color: var(--brand-ink);
+    white-space: pre-line;
+  }
+}
+
+.punto {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+}
+
+@media (max-width: 640px) {
+  .detalle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

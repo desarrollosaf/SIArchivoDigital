@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  padding-bottom: 2rem;
+}
+
+.titulo-con-regreso {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+
+  p {
+    margin: 0.2rem 0 0;
+
+    strong {
+      color: var(--brand-primary);
+    }
+
+    .nota-folio {
+      margin-left: 0.35rem;
+      font-size: 0.8rem;
+    }
+  }
+}

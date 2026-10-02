@@ -1,0 +1,53 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Búsqueda de folios</h1>
+      <p>Busca por folio, referencia, asunto, indicaciones o nombre del remitente.</p>
+    </div>
+  </header>
+
+  <div class="tarjeta">
+    <form class="buscador" (ngSubmit)="buscar()">
+      <input
+        type="search"
+        name="termino"
+        placeholder="Ej. 40011/125/2026, IEEM/SE, nombre del remitente…"
+        [ngModel]="termino()"
+        (ngModelChange)="termino.set($event)"
+        autocomplete="off"
+      />
+      <button type="submit" class="btn btn--primary" [disabled]="cargando()">
+        {{ cargando() ? 'Buscando…' : 'Buscar' }}
+      </button>
+    </form>
+    <p class="aviso nota">
+      Se muestran hasta 200 resultados, los más recientes primero, de los documentos a los que
+      tienes acceso.
+    </p>
+
+    @if (error()) {
+      <p class="aviso aviso--error">{{ error() }}</p>
+    } @else if (buscado() !== null && resultados().length === 0) {
+      <p class="aviso">Sin resultados para “{{ buscado() }}”.</p>
+    } @else if (resultados().length) {
+      <p class="aviso nota">
+        {{ resultados().length }} {{ resultados().length === 1 ? 'resultado' : 'resultados' }}
+      </p>
+      <ag-grid-angular
+        class="grid-ag"
+        [theme]="gridTheme"
+        [localeText]="localeText"
+        [rowData]="resultados()"
+        [columnDefs]="columnas"
+        [rowClassRules]="clasesFila"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[20, 50, 100]"
+        [domLayout]="'autoHeight'"
+        [enableCellTextSelection]="true"
+        [ensureDomOrder]="true"
+        (gridReady)="onGridReady()"
+      />
+    }
+  </div>
+</section>

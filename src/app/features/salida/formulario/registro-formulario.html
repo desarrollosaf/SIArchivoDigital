@@ -1,0 +1,309 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div class="titulo-con-regreso">
+      <a
+        class="btn btn--outline btn--sm"
+        [routerLink]="modoEdicion ? ['/documentos', idRegistro] : '/salida'"
+      >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M15 6l-6 6 6 6"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Regresar</span>
+      </a>
+      <div>
+        <h1>{{ modoEdicion ? 'Editar registro' : 'Registrar documento' }}</h1>
+        @if (folio()) {
+          <p>
+            Folio <strong>{{ folio() }}</strong>
+            @if (!modoEdicion) {
+              <span class="nota-folio">(se confirma al guardar)</span>
+            }
+          </p>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (sinDepartamento()) {
+    <p class="aviso aviso--error aviso--caja">
+      Tu usuario no tiene un departamento asignado en el padrón, por lo que no se puede generar el
+      folio. Solicita a Informática que lo actualicen.
+    </p>
+  }
+
+  @if (cargando()) {
+    <div class="tarjeta"><p class="aviso">Cargando formulario…</p></div>
+  } @else {
+    <div class="tarjeta">
+      <h2><span class="numero-paso">1</span>Datos del documento</h2>
+      <div class="formulario formulario--3">
+        <div class="campo">
+          <label for="f-recepcion">Fecha de recepción <span class="obligatorio">*</span></label>
+          <input
+            id="f-recepcion"
+            type="date"
+            [class.is-invalid]="invalidos().has('fechaRecepcion')"
+            [ngModel]="fechaRecepcion()"
+            (ngModelChange)="fechaRecepcion.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <label for="f-documento">Fecha del documento</label>
+          <input
+            id="f-documento"
+            type="date"
+            [ngModel]="fechaDocumento()"
+            (ngModelChange)="fechaDocumento.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <label for="f-referencia">Referencia / número de oficio</label>
+          <input
+            id="f-referencia"
+            type="text"
+            maxlength="255"
+            [ngModel]="referenciaDocumento()"
+            (ngModelChange)="referenciaDocumento.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <label for="f-solicitud">Medio de recepción</label>
+          <select
+            id="f-solicitud"
+            [ngModel]="tipoSolicitud()"
+            (ngModelChange)="tipoSolicitud.set($event)"
+          >
+            <option [ngValue]="null">Sin especificar</option>
+            @for (t of tiposSolicitud(); track t.id) {
+              <option [ngValue]="t.id">{{ t.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-fojas">Fojas</label>
+          <input
+            id="f-fojas"
+            type="number"
+            min="0"
+            [ngModel]="fojas()"
+            (ngModelChange)="fojas.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <span class="campo__etiqueta">Seguimiento de (folio previo)</span>
+          <app-persona-picker
+            fuente="rastreables"
+            [multiple]="false"
+            placeholder="Busca uno de tus folios…"
+            [seleccion]="rastreo()"
+            (seleccionChange)="rastreo.set($event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2><span class="numero-paso">2</span>Remitente y asunto</h2>
+      <div class="formulario">
+        <div class="campo">
+          <span class="campo__etiqueta">Remitente <span class="obligatorio">*</span></span>
+          <app-persona-picker
+            fuente="servidores"
+            [multiple]="false"
+            [extras]="remitenteExterno"
+            placeholder="Busca al servidor público o elige remitente externo…"
+            [invalid]="invalidos().has('remitente')"
+            [seleccion]="remitente()"
+            (seleccionChange)="remitente.set($event)"
+          />
+        </div>
+        @if (esExterno()) {
+          <div class="campo">
+            <label for="f-otro"
+              >Nombre del remitente externo <span class="obligatorio">*</span></label
+            >
+            <input
+              id="f-otro"
+              type="text"
+              maxlength="255"
+              [class.is-invalid]="invalidos().has('otroRemitente')"
+              [ngModel]="otroRemitente()"
+              (ngModelChange)="otroRemitente.set($event)"
+            />
+          </div>
+        }
+        <div class="campo campo--completo">
+          <label for="f-asunto">Asunto <span class="obligatorio">*</span></label>
+          <textarea
+            id="f-asunto"
+            rows="3"
+            [class.is-invalid]="invalidos().has('asunto')"
+            [ngModel]="asunto()"
+            (ngModelChange)="asunto.set($event)"
+          ></textarea>
+        </div>
+        <div class="campo campo--completo">
+          <label for="f-indicaciones"
+            >Indicaciones para quien atiende <span class="obligatorio">*</span></label
+          >
+          <textarea
+            id="f-indicaciones"
+            rows="2"
+            [class.is-invalid]="invalidos().has('indicaciones')"
+            [ngModel]="indicaciones()"
+            (ngModelChange)="indicaciones.set($event)"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2><span class="numero-paso">3</span>Clasificación y plazo</h2>
+      <div class="formulario formulario--3">
+        <div class="campo">
+          <label for="f-serie">Serie <span class="obligatorio">*</span></label>
+          <select
+            id="f-serie"
+            [class.is-invalid]="invalidos().has('serie')"
+            [ngModel]="serieId()"
+            (ngModelChange)="serieId.set($event)"
+          >
+            <option [ngValue]="null" disabled>Selecciona la serie</option>
+            @for (s of series(); track s.id) {
+              <option [ngValue]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-prioridad">Prioridad <span class="obligatorio">*</span></label>
+          <select
+            id="f-prioridad"
+            [class.is-invalid]="invalidos().has('tipoAtencion')"
+            [ngModel]="tipoAtencion()"
+            (ngModelChange)="tipoAtencion.set($event)"
+          >
+            @for (t of tiposAtencion(); track t.id) {
+              <option [ngValue]="t.id">{{ t.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-limite">Fecha límite de atención <span class="obligatorio">*</span></label>
+          <input
+            id="f-limite"
+            type="date"
+            [min]="fechaRecepcion()"
+            [class.is-invalid]="invalidos().has('fechaLimite')"
+            [ngModel]="fechaLimite()"
+            (ngModelChange)="fechaLimite.set($event)"
+          />
+        </div>
+        @if (pideHorario()) {
+          <div class="campo">
+            <label for="f-inicio">Hora de inicio</label>
+            <input
+              id="f-inicio"
+              type="time"
+              [ngModel]="horaInicio()"
+              (ngModelChange)="horaInicio.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="f-termino">Hora de término</label>
+            <input
+              id="f-termino"
+              type="time"
+              [ngModel]="horaTermino()"
+              (ngModelChange)="horaTermino.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="f-salon">Sede</label>
+            <select id="f-salon" [ngModel]="salon()" (ngModelChange)="salon.set($event)">
+              <option [ngValue]="null">Sin sede</option>
+              @for (s of salones(); track s.id) {
+                <option [ngValue]="s.id">{{ s.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo campo--completo">
+            <label for="f-evento">Nombre del evento</label>
+            <input
+              id="f-evento"
+              type="text"
+              [ngModel]="nombreEvento()"
+              (ngModelChange)="nombreEvento.set($event)"
+            />
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2><span class="numero-paso">4</span>Turnar a</h2>
+      <div class="formulario">
+        <div class="campo">
+          <span class="campo__etiqueta">Para su atención</span>
+          <app-persona-picker
+            [invalid]="invalidos().has('destinatarios')"
+            [seleccion]="atencion()"
+            (seleccionChange)="atencion.set($event)"
+          />
+          <span class="campo__ayuda"
+            >Deben responder; el registro se concluye cuando todos lo atienden.</span
+          >
+        </div>
+        <div class="campo">
+          <span class="campo__etiqueta">Para su conocimiento</span>
+          <app-persona-picker
+            [invalid]="invalidos().has('destinatarios')"
+            [seleccion]="conocimiento()"
+            (seleccionChange)="conocimiento.set($event)"
+          />
+          <span class="campo__ayuda">Solo se les informa. También puedes elegir grupos.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2><span class="numero-paso">5</span>Documento escaneado</h2>
+      @if (modoEdicion && tieneArchivoActual()) {
+        <p class="aviso">Ya hay un documento cargado. Si eliges otro, lo reemplazará.</p>
+      }
+      <app-file-upload
+        variant="list"
+        [multiple]="false"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+        [files]="archivos()"
+        (filesChange)="onArchivos($event)"
+      />
+    </div>
+
+    <div class="acciones-formulario">
+      <a
+        class="btn btn--outline"
+        [routerLink]="modoEdicion ? ['/documentos', idRegistro] : '/salida'"
+        >Cancelar</a
+      >
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="enviando() || sinDepartamento()"
+        (click)="guardar()"
+      >
+        @if (enviando()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Guardando…</span>
+        } @else {
+          <span>{{ modoEdicion ? 'Guardar cambios' : 'Registrar y turnar' }}</span>
+        }
+      </button>
+    </div>
+  }
+</section>

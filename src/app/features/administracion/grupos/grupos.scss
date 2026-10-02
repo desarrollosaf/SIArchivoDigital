@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.grupos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem;
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--brand-ink);
+    }
+  }
+
+  ul {
+    flex: 1;
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.84rem;
+    color: var(--brand-ink);
+  }
+
+  footer {
+    display: flex;
+    gap: 0.5rem;
+  }
+}

@@ -1,0 +1,97 @@
+<section class="pagina">
+  <div class="no-imprimir acciones">
+    <a class="btn btn--outline btn--sm" routerLink="/presidencia/agenda">Regresar</a>
+    <button
+      type="button"
+      class="btn btn--primary btn--sm"
+      [disabled]="!reporte()"
+      (click)="imprimir()"
+    >
+      Imprimir / guardar PDF
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="tarjeta">
+      <p class="aviso aviso--error">{{ error() }}</p>
+    </div>
+  } @else if (!reporte()) {
+    <div class="tarjeta"><p class="aviso">Generando agenda…</p></div>
+  } @else if (reporte(); as r) {
+    <article class="hoja">
+      <header class="hoja__encabezado">
+        <img src="assets/congreso-edomex-logo.png" alt="Congreso del Estado de México" />
+        <div>
+          <h1>{{ r.tipo === 'comisiones' ? 'Agenda de comisiones' : 'Agenda legislativa' }}</h1>
+          <p>
+            {{
+              r.desde === r.hasta
+                ? diaLargo(r.desde)
+                : 'Del ' + fechaCorta(r.desde) + ' al ' + fechaCorta(r.hasta)
+            }}
+            @if (r.sede) {
+              · Sede: {{ r.sede }}
+            }
+          </p>
+        </div>
+      </header>
+
+      @if (r.dias.length === 0) {
+        <p class="aviso">No hay eventos en este periodo.</p>
+      }
+
+      @for (dia of r.dias; track dia.fecha) {
+        <section class="dia">
+          <h2>{{ diaLargo(dia.fecha) }}</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Horario</th>
+                <th>Evento</th>
+                <th>Sede</th>
+                <th>{{ r.tipo === 'comisiones' ? 'Reunión / modalidad' : 'Detalle' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of dia.eventos; track e.id) {
+                <tr>
+                  <td class="hora">{{ horario(e) }}</td>
+                  <td>
+                    @if (e.origen === 'documento') {
+                      <strong>{{ e.nombreEvento || e.asunto }}</strong>
+                      @if (e.remitente) {
+                        <small>{{ e.remitente }}</small>
+                      }
+                      <small>Folio {{ e.folio }}</small>
+                    } @else {
+                      <strong>{{ e.tipoEvento || e.titulo }}</strong>
+                      <small>{{ e.nombreEvento || e.materia }}</small>
+                      @for (c of e.comisiones; track c) {
+                        <small>{{ c }}</small>
+                      }
+                    }
+                  </td>
+                  <td>
+                    <span class="sede"
+                      ><i [style.background]="e.color"></i>{{ e.sede || 'Sin sede' }}</span
+                    >
+                  </td>
+                  <td>
+                    @if (e.origen === 'legislativo') {
+                      {{ e.tipoReunion || '—' }}
+                      @if (e.modalidad) {
+                        · {{ e.modalidad }}
+                      }
+                    } @else {
+                      {{ e.indicaciones || '—' }}
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+    </article>
+  }
+</section>

@@ -1,0 +1,178 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Agenda legislativa</h1>
+      <p>Eventos de Presidencia: documentos de la serie EVENTOS y eventos legislativos.</p>
+    </div>
+  </header>
+
+  <div class="tarjeta">
+    <div class="formulario formulario--3">
+      <div class="campo">
+        <label for="p-inicial">Fecha inicial</label>
+        <input
+          id="p-inicial"
+          type="date"
+          [ngModel]="fechaInicial()"
+          (ngModelChange)="fechaInicial.set($event)"
+        />
+      </div>
+      <div class="campo">
+        <label for="p-final">Fecha final</label>
+        <input
+          id="p-final"
+          type="date"
+          [min]="fechaInicial()"
+          [ngModel]="fechaFinal()"
+          (ngModelChange)="fechaFinal.set($event)"
+        />
+      </div>
+      <div class="campo">
+        <label for="p-sede">Sede</label>
+        <select id="p-sede" [ngModel]="sede()" (ngModelChange)="onSede($event)">
+          <option [ngValue]="null">Todas las sedes</option>
+          @for (s of sedes(); track s.id) {
+            <option [ngValue]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="acciones-formulario reportes">
+      <span class="campo__ayuda"
+        >La sede también filtra el calendario. Los reportes usan el periodo indicado.</span
+      >
+      <button type="button" class="btn btn--primary btn--sm" (click)="imprimir('general')">
+        Agenda general
+      </button>
+      <button type="button" class="btn btn--outline btn--sm" (click)="imprimir('comisiones')">
+        Agenda comisiones
+      </button>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <app-calendario-mensual
+      [eventos]="eventosCalendario()"
+      [cargando]="cargando()"
+      [error]="error()"
+      [maxPorDia]="5"
+      (rangoChange)="cargar($event)"
+      (diaChange)="diaSeleccionado.set($event)"
+      (eventoClick)="verDetalle($event)"
+    />
+  </div>
+
+  @if (diaSeleccionado(); as dia) {
+    <div class="tarjeta">
+      <h2>Eventos del {{ fechaCorta(dia) }}</h2>
+      @if (eventosDelDia().length === 0) {
+        <p class="aviso">No hay eventos este día.</p>
+      } @else {
+        <ul class="lista-eventos">
+          @for (e of eventosDelDia(); track e.id) {
+            <li>
+              <span class="lista-eventos__color" [style.background]="e.color"></span>
+              <div>
+                <button type="button" class="lista-eventos__titulo" (click)="verDetalle(e.id)">
+                  {{ e.titulo }}
+                </button>
+                <small>{{ horarioEvento(e) }}</small>
+                <p>{{ e.sede ?? 'Sin sede' }}</p>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  @if (detalle(); as d) {
+    <app-modal titulo="Detalles de agenda" ancho="ancho" (cerrar)="detalle.set(null)">
+      <dl class="detalle">
+        @if (d.origen === 'documento') {
+          <div class="detalle__completo">
+            <dt>Indicación</dt>
+            <dd>{{ d.indicaciones || '—' }}</dd>
+          </div>
+          <div class="detalle__completo">
+            <dt>Nombre del evento</dt>
+            <dd>{{ d.nombreEvento || '—' }}</dd>
+          </div>
+          <div class="detalle__completo">
+            <dt>Detalles</dt>
+            <dd>{{ d.asunto || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Folio</dt>
+            <dd>{{ d.folio }}</dd>
+          </div>
+          <div>
+            <dt>Referencia</dt>
+            <dd>{{ d.referencia || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Tipo de atención</dt>
+            <dd>{{ d.tipoAtencion || '—' }}</dd>
+          </div>
+          <div class="detalle__completo">
+            <dt>Remitente</dt>
+            <dd>{{ d.remitente || '—' }}</dd>
+          </div>
+        } @else {
+          <div>
+            <dt>Tipo de evento</dt>
+            <dd>{{ d.tipoEvento || d.titulo }}</dd>
+          </div>
+          <div>
+            <dt>Tipo de reunión</dt>
+            <dd>{{ d.tipoReunion || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Modalidad</dt>
+            <dd>{{ d.modalidad || '—' }}</dd>
+          </div>
+          <div class="detalle__completo">
+            <dt>Nombre del evento</dt>
+            <dd>{{ d.nombreEvento || '—' }}</dd>
+          </div>
+          <div class="detalle__completo">
+            <dt>Materia</dt>
+            <dd>{{ d.materia || '—' }}</dd>
+          </div>
+          @if (d.comisiones.length) {
+            <div class="detalle__completo">
+              <dt>Comisiones</dt>
+              <dd>{{ d.comisiones.join(' · ') }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Capturó</dt>
+            <dd>{{ d.capturo || '—' }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Fecha</dt>
+          <dd>{{ fechaCorta(d.fecha) }}</dd>
+        </div>
+        <div>
+          <dt>Horario</dt>
+          <dd>{{ horario(d) }}</dd>
+        </div>
+        <div>
+          <dt>Sede</dt>
+          <dd><i class="punto" [style.background]="d.color"></i>{{ d.sede || 'Sin sede' }}</dd>
+        </div>
+      </dl>
+      <div class="acciones-formulario">
+        @if (d.registroId) {
+          <a class="btn btn--outline btn--sm" [routerLink]="['/documentos', d.registroId]"
+            >Abrir documento</a
+          >
+        }
+        <button type="button" class="btn btn--primary btn--sm" (click)="detalle.set(null)">
+          Cerrar
+        </button>
+      </div>
+    </app-modal>
+  }
+</section>

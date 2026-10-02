@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+.filtro-fecha {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.filtro-fecha__select {
+  height: 42px;
+  padding: 0 2rem 0 0.9rem;
+  border: 1.5px solid var(--brand-border);
+  border-radius: 10px;
+  background: #f9fafa;
+  color: var(--brand-ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-soft);
+  }
+}

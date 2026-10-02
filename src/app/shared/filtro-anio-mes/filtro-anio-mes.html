@@ -1,0 +1,24 @@
+<div class="filtro-fecha">
+  <select
+    class="filtro-fecha__select"
+    [ngModel]="anio()"
+    (ngModelChange)="onAnioChange($event)"
+    aria-label="Filtrar por año"
+  >
+    @for (a of anios(); track a) {
+      <option [value]="a">{{ a }}</option>
+    }
+  </select>
+
+  <select
+    class="filtro-fecha__select"
+    [ngModel]="mes() ?? ''"
+    (ngModelChange)="onMesChange($event)"
+    aria-label="Filtrar por mes"
+  >
+    <option value="">Todos los meses</option>
+    @for (m of meses; track m.valor) {
+      <option [value]="m.valor">{{ m.nombre }}</option>
+    }
+  </select>
+</div>
