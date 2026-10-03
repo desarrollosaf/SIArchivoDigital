@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Manual de usuario · SIArchivoDigital</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  @page :first { margin: 0; }
+  :root {
+    --vino: #960048; --vino-osc: #5a002b; --tinta: #2b2b30; --gris: #6b6b73; --linea: #e6e2e4;
+    --suave: #f8f2f5; --ambar: #fdf3e3; --verde: #e9f5ee;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: var(--tinta); background: #fff; }
+
+  /* Portada */
+  .portada { height: 297mm; display: flex; flex-direction: column; justify-content: space-between; padding: 28mm 22mm; background: linear-gradient(160deg, var(--vino) 0%, var(--vino-osc) 100%); color: #fff; page-break-after: always; }
+  .portada .logo { background: #fff; border-radius: 12px; padding: 10px 16px; display: inline-block; }
+  .portada .logo img { height: 52px; display: block; }
+  .portada h1 { font-size: 40pt; margin: 0 0 6px; letter-spacing: -0.5px; border: 0; padding: 0; color: #fff; page-break-before: avoid; }
+  .portada .sub { font-size: 18pt; opacity: 0.9; margin: 0; }
+  .portada .linea { width: 70px; height: 4px; background: #fff; border-radius: 2px; margin: 18px 0; opacity: 0.8; }
+  .portada .desc { font-size: 12pt; max-width: 130mm; opacity: 0.9; }
+  .portada .pie { font-size: 10pt; opacity: 0.85; line-height: 1.6; }
+
+  h1 { page-break-before: always; font-size: 20pt; color: var(--vino); margin: 0 0 4mm; padding-bottom: 3mm; border-bottom: 2px solid var(--vino); }
+  h1 .num { display: inline-block; min-width: 1.6em; color: var(--gris); font-weight: 600; }
+  h2 { font-size: 13.5pt; color: var(--vino-osc); margin: 7mm 0 2mm; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 5mm 0 1.5mm; page-break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  b, strong { color: #1d1d22; }
+
+  .indice { list-style: none; padding: 0; margin: 0; columns: 1; }
+  .indice li { display: flex; align-items: baseline; gap: 6px; padding: 2.2mm 0; border-bottom: 1px dotted #d8d2d5; font-size: 11pt; }
+  .indice li .n { color: var(--vino); font-weight: 700; min-width: 8mm; }
+  .indice li small { margin-left: auto; color: var(--gris); }
+
+  figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+  figure .marco { border: 1px solid var(--linea); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(60,20,35,.08); }
+  figure img { width: 100%; display: block; }
+  figure.recorte .marco { max-height: 105mm; position: relative; }
+  figure.recorte .marco::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14mm; background: linear-gradient(transparent, #fff); }
+  figure.mediana { width: 64%; margin-left: auto; margin-right: auto; }
+  figcaption { font-size: 8.5pt; color: var(--gris); text-align: center; margin-top: 1.5mm; }
+
+  .nota, .importante, .consejo { border-radius: 8px; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; font-size: 10pt; }
+  .nota { background: #eef2f7; border-left: 4px solid #33506e; }
+  .importante { background: #fbecea; border-left: 4px solid #c0392b; }
+  .consejo { background: var(--verde); border-left: 4px solid #2e7d4f; }
+  .nota b:first-child, .importante b:first-child, .consejo b:first-child { display: block; margin-bottom: 1mm; }
+
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.5pt; page-break-inside: avoid; }
+  th { background: var(--suave); color: var(--vino-osc); text-align: left; padding: 2mm 3mm; border-bottom: 2px solid var(--vino); }
+  td { padding: 2mm 3mm; border-bottom: 1px solid var(--linea); vertical-align: top; }
+
+  .pasos { counter-reset: paso; list-style: none; padding-left: 0; }
+  .pasos > li { counter-increment: paso; position: relative; padding-left: 10mm; margin-bottom: 2.5mm; }
+  .pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0.2mm; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: var(--vino); color: #fff; font-weight: 700; font-size: 9pt; display: flex; align-items: center; justify-content: center; }
+
+  .chip { display: inline-block; padding: 0 2.2mm; border-radius: 10px; font-size: 8.5pt; font-weight: 700; background: #f1edef; color: var(--gris); white-space: nowrap; }
+  .chip.rojo { background: #fbecea; color: #c0392b; }
+  .chip.naranja { background: #fdf3e3; color: #d98a1f; }
+  .chip.verde { background: #e9f5ee; color: #2e7d4f; }
+  .chip.azul { background: #eef2f7; color: #33506e; }
+  .chip.vino { background: var(--vino); color: #fff; }
+  .boton { display: inline-block; padding: 0 2.5mm; border-radius: 5px; border: 1px solid var(--vino); color: var(--vino); font-weight: 700; font-size: 9pt; white-space: nowrap; }
+  .boton.lleno { background: var(--vino); color: #fff; }
+  .ruta { font-weight: 700; color: var(--vino-osc); }
+
+  .rol { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; margin: 3mm 0 5mm; }
+  .rol div { border: 1px solid var(--linea); border-radius: 8px; padding: 3mm; background: #fff; }
+  .rol div > b { display: block; color: var(--vino); margin-bottom: 1mm; }
+  .rol div small { color: var(--gris); }
+  .sinsalto { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============================ PORTADA ============================ -->
+<section class="portada">
+  <div><span class="logo"><img src="logo.png" alt="Congreso del Estado de México" /></span></div>
+  <div>
+    <h1>SIArchivoDigital</h1>
+    <p class="sub">Manual de usuario</p>
+    <div class="linea"></div>
+    <p class="desc">Guía para registrar, turnar y dar seguimiento a la documentación oficial desde las bandejas de entrada y salida, las consultas y los módulos de Presidencia y Administración.</p>
+  </div>
+  <div class="pie">
+    Secretaría de Administración y Finanzas<br />
+    Poder Legislativo del Estado de México<br />
+    Versión 1.0 · Octubre de 2026
+  </div>
+</section>
+
+<!-- ============================ ÍNDICE ============================ -->
+<h1 style="page-break-before: avoid">Contenido</h1>
+<ol class="indice">
+  <li><span class="n">1</span> Introducción y conceptos básicos</li>
+  <li><span class="n">2</span> Acceso al sistema</li>
+  <li><span class="n">3</span> Pantalla de inicio, menú y notificaciones</li>
+  <li><span class="n">4</span> Bandeja de entrada (Recibidos)</li>
+  <li><span class="n">5</span> El expediente de un documento: turnar, concluir y comentar</li>
+  <li><span class="n">6</span> Bandeja de salida (Enviados)</li>
+  <li><span class="n">7</span> Registrar, editar y cancelar un documento</li>
+  <li><span class="n">8</span> Búsqueda de folios</li>
+  <li><span class="n">9</span> Agenda</li>
+  <li><span class="n">10</span> Archivo de concentración</li>
+  <li><span class="n">11</span> Reportes</li>
+  <li><span class="n">12</span> Presidencia: agenda y eventos legislativos <small>Rol Presidencia</small></li>
+  <li><span class="n">13</span> Administración <small>Rol Administrador</small></li>
+  <li><span class="n">14</span> Preguntas frecuentes</li>
+  <li><span class="n">15</span> Glosario</li>
+</ol>
+
+<!-- ============================ 1 ============================ -->
+<h1><span class="num">1</span>Introducción y conceptos básicos</h1>
+<p><b>SIArchivoDigital</b> es el sistema de control de gestión documental de la Secretaría de Administración y Finanzas. Con él se registra cada oficio o documento que llega a un área, se le asigna un <b>folio</b>, se <b>turna</b> a las personas que deben atenderlo o conocerlo, y se da seguimiento hasta su <b>conclusión</b>.</p>
+<p>Es la nueva versión del Archivo Digital: conserva la misma información, los mismos usuarios y las mismas reglas que el sistema anterior, con una interfaz renovada.</p>
+
+<h2>Conceptos que conviene conocer</h2>
+<table>
+  <tr><th style="width:28%">Concepto</th><th>Qué significa</th></tr>
+  <tr><td><b>Registro / documento</b></td><td>El oficio capturado en el sistema, con sus datos (remitente, asunto, fechas) y, normalmente, el archivo escaneado.</td></tr>
+  <tr><td><b>Folio</b></td><td>Número único que el sistema asigna a cada registro, con el formato <i>clave del área / consecutivo / año</i>, por ejemplo <b>40011/3530/2026</b>.</td></tr>
+  <tr><td><b>Referencia</b></td><td>El número de oficio que trae el documento original, por ejemplo <b>SP/ALSC/LXII/2988/26</b>. En las bandejas es el título de cada tarjeta.</td></tr>
+  <tr><td><b>Turno</b></td><td>El envío de un documento a una persona. Puede ser <span class="chip azul">Para su atención</span> (debe responderlo) o <span class="chip azul">Para su conocimiento</span> (solo se le informa).</td></tr>
+  <tr><td><b>Prioridad</b></td><td><span class="chip naranja">Ordinario</span> o <span class="chip rojo">Urgente</span>.</td></tr>
+  <tr><td><b>Fecha límite</b></td><td>Fecha en la que el documento debe quedar atendido. El sistema avisa cuántos días faltan o desde cuándo está vencido.</td></tr>
+  <tr><td><b>Estatus</b></td><td><span class="chip naranja">Pendiente</span> mientras alguien con turno de atención no lo concluya; <span class="chip verde">Concluido</span> cuando todos los turnos de atención se atendieron; <span class="chip">Cancelado</span> si quien lo registró lo anuló.</td></tr>
+</table>
+
+<h2>Perfiles de usuario</h2>
+<p>Lo que cada persona ve en el menú depende de su rol:</p>
+<div class="rol">
+  <div><b>Usuario</b><small>Todas las personas. Bandejas de entrada y salida, registro de documentos, búsqueda, agenda, archivo de concentración y reportes.</small></div>
+  <div><b>Presidencia</b><small>Además de lo anterior, el menú <b>Presidencia</b>: agenda legislativa y captura de eventos legislativos.</small></div>
+  <div><b>Administrador</b><small>Acceso completo, incluido el menú <b>Administración</b>: clasificación archivística, grupos de destinatarios y roles.</small></div>
+</div>
+
+<!-- ============================ 2 ============================ -->
+<h1><span class="num">2</span>Acceso al sistema</h1>
+<p>Abre el sistema en tu navegador (Google Chrome, Microsoft Edge o Firefox actualizados) con la dirección que te proporcionó el área de Informática.</p>
+<figure class="mediana"><div class="marco"><img src="img/01-login.png" /></div><figcaption>Figura 1. Pantalla de inicio de sesión.</figcaption></figure>
+<ol class="pasos">
+  <li>Escribe tu <b>RFC</b> (el mismo usuario del sistema anterior).</li>
+  <li>Escribe tu <b>contraseña</b>.</li>
+  <li>Presiona <span class="boton lleno">Iniciar sesión</span>.</li>
+</ol>
+<div class="importante"><b>Si no puedes entrar</b>Verifica que el RFC esté completo (puedes escribirlo en mayúsculas o minúsculas). Si tu cuenta está bloqueada o no recuerdas tu contraseña, comunícate con el área de Informática.</div>
+
+<h2>Cierre de sesión e inactividad</h2>
+<p>Para salir, usa el botón <span class="boton">Cerrar sesión</span> en la esquina superior derecha. Por seguridad, si pasas <b>una hora sin actividad</b> el sistema muestra el aviso <i>“¿Sigues ahí?”</i> con una cuenta regresiva de 60 segundos: presiona <span class="boton lleno">Seguir conectado</span> para continuar o la sesión se cerrará sola.</p>
+
+<!-- ============================ 3 ============================ -->
+<h1><span class="num">3</span>Pantalla de inicio, menú y notificaciones</h1>
+<p>Al entrar verás un resumen de tu trabajo pendiente y accesos rápidos a las tareas más comunes.</p>
+<figure><div class="marco"><img src="img/02-inicio.png" /></div><figcaption>Figura 2. Pantalla de inicio.</figcaption></figure>
+<table>
+  <tr><th style="width:30%">Indicador</th><th>Qué cuenta</th></tr>
+  <tr><td><b>Turnos por atender</b></td><td>Documentos que te turnaron y que no has concluido (y cuántos de ellos son para atención).</td></tr>
+  <tr><td><b>Fuera de plazo</b></td><td>Turnos para atención cuya fecha límite ya pasó.</td></tr>
+  <tr><td><b>Sin abrir</b></td><td>Turnos cuyo documento todavía no has consultado.</td></tr>
+  <tr><td><b>Mis registros pendientes</b></td><td>Documentos que registró tu área y que siguen esperando respuesta de las personas a quienes se turnaron.</td></tr>
+</table>
+<p>Cada indicador es un enlace a la bandeja correspondiente. Debajo están los accesos a <b>Registrar documento</b>, <b>Bandeja de entrada</b>, <b>Buscar un folio</b> y <b>Agenda</b>.</p>
+
+<h2>Menú principal</h2>
+<figure><div class="marco"><img src="img/03-menu.png" /></div><figcaption>Figura 3. Menú desplegable de la barra superior.</figcaption></figure>
+<table>
+  <tr><th style="width:22%">Menú</th><th>Opciones</th></tr>
+  <tr><td><b>Bandejas</b></td><td>Entrada (turnos recibidos) · Salida (mis registros) · Registrar documento</td></tr>
+  <tr><td><b>Consultas</b></td><td>Búsqueda de folios · Agenda · Archivo de concentración · Reportes</td></tr>
+  <tr><td><b>Presidencia</b></td><td>Agenda legislativa · Eventos legislativos <i>(solo rol Presidencia o Administrador)</i></td></tr>
+  <tr><td><b>Administración</b></td><td>Clasificación archivística · Grupos de destinatarios · Roles de usuario <i>(solo Administrador)</i></td></tr>
+</table>
+<p>En pantallas pequeñas o en el celular, el menú se abre con el botón de tres líneas (☰).</p>
+
+<h2>Notificaciones</h2>
+<p>La <b>campana</b> de la barra superior muestra cuántas notificaciones tienes sin leer (por ejemplo, cuando te turnan un documento). Al hacer clic se abre el panel: selecciona una notificación para ir directo al documento, o usa <b>Marcar todas como leídas</b>.</p>
+<figure class="mediana"><div class="marco"><img src="img/04-notificaciones.png" /></div><figcaption>Figura 4. Panel de notificaciones.</figcaption></figure>
+
+<!-- ============================ 4 ============================ -->
+<h1><span class="num">4</span>Bandeja de entrada (Recibidos)</h1>
+<p>En <span class="ruta">Bandejas › Entrada</span> están los documentos que <b>te turnaron</b>. La pantalla se llama <b>Bandeja</b> y tiene dos pestañas: <b>Recibidos</b> (esta) y <b>Enviados</b> (capítulo 6). El número junto a <i>Recibidos</i> indica cuántos documentos aún no abres.</p>
+<figure class="mediana"><div class="marco"><img src="img/05-entrada.png" /></div><figcaption>Figura 5. Bandeja de entrada.</figcaption></figure>
+
+<div class="nota"><b>Lector delegado</b>Algunas personas están autorizadas para consultar las bandejas de su titular. En ese caso el sistema muestra el aviso <i>“Estás consultando la bandeja de tu titular en modo de solo lectura”</i> y no permite turnar, concluir, editar ni comentar.</div>
+
+<h2>Cómo leer una tarjeta</h2>
+<p>Cada documento aparece como una tarjeta con:</p>
+<ul>
+  <li><b>Círculo de color</b> a la izquierda: rojo si es <span class="chip rojo">Urgente</span>, naranja si es <span class="chip naranja">Ordinario</span>.</li>
+  <li><b>Título</b>: el número de oficio (referencia). Si el documento no lo tiene, se muestra el folio. A la derecha, la fecha y hora en que te lo turnaron.</li>
+  <li><b>Folio</b> del sistema, si es <span class="chip azul">Para atención</span> o <span class="chip azul">Para conocimiento</span>, la prioridad y el <b>plazo</b>: <span class="chip verde">Vence en 24 días</span>, <span class="chip rojo">Vence hoy</span> o <span class="chip rojo">Vencido hace 3 días</span>.</li>
+  <li><b>De:</b> quién envía el documento y <b>Turnó:</b> quién te lo asignó.</li>
+  <li>El <b>asunto</b> del documento.</li>
+  <li>A la derecha, el estado de lectura: <b>✓</b> gris si no lo has abierto, <b>✓✓</b> azul si ya lo consultaste.</li>
+</ul>
+<p>Los documentos que todavía no abres aparecen con <b>fondo gris, borde izquierdo y un punto</b> junto al título. Los documentos cancelados se ven atenuados.</p>
+
+<h2>Buscar y filtrar</h2>
+<ul>
+  <li><b>Buscador</b>: escribe parte del folio, número de oficio, asunto, remitente o de quien te lo turnó. No importa si usas acentos o mayúsculas.</li>
+  <li><b>Pendientes / Atendidos</b>: por defecto se ven los pendientes. Al elegir <i>Atendidos</i> aparecen además los filtros de <b>año</b> y <b>mes</b>.</li>
+  <li><b>Prioridad</b>: haz clic en <span class="chip rojo">Urgente</span> o <span class="chip naranja">Ordinario</span> para ver solo esa prioridad; vuelve a hacer clic para quitar el filtro.</li>
+</ul>
+<p>La lista muestra 20 documentos por página. Al final verás <i>“Mostrando 1–20 de N”</i> y los botones <b>Anterior</b>, números de página y <b>Siguiente</b>.</p>
+
+<h2>Vista rápida</h2>
+<p>Haz clic en una tarjeta para abrir la <b>vista rápida</b> sin salir de la bandeja. Muestra la serie, prioridad, remitente, quién lo registró, fechas, asunto, indicaciones y el estatus de tu turno.</p>
+<figure class="mediana"><div class="marco"><img src="img/06-entrada-vista-rapida.png" /></div><figcaption>Figura 6. Vista rápida de un documento recibido.</figcaption></figure>
+<ul>
+  <li><span class="boton lleno">Ver documento</span> abre el archivo escaneado en una pestaña nueva. <b>Al abrirlo, tu turno queda marcado como visto.</b></li>
+  <li><span class="boton">Abrir expediente</span> lleva a la página completa del documento, donde puedes turnarlo, concluirlo o comentar (capítulo 5).</li>
+  <li>Para cerrar, usa la <b>✕</b> o haz clic fuera de la ventana.</li>
+</ul>
+
+<!-- ============================ 5 ============================ -->
+<h1><span class="num">5</span>El expediente de un documento</h1>
+<p>El <b>expediente</b> reúne toda la información de un registro: datos, turnos, comentarios y las acciones disponibles. Llegas a él desde la vista rápida, desde una notificación, la búsqueda o la agenda.</p>
+<figure class="recorte"><div class="marco"><img src="img/07-expediente.png" /></div><figcaption>Figura 7. Expediente de un documento.</figcaption></figure>
+
+<h2>Partes del expediente</h2>
+<ul>
+  <li><b>Encabezado</b>: serie, folio, estatus (con los días restantes si está pendiente) y quién lo registró.</li>
+  <li><b>Datos</b>: remitente, referencia, prioridad, fechas de recepción, del documento y límite (con horario si aplica), evento, fojas y, si es seguimiento de otro, el folio previo como enlace.</li>
+  <li><b>Asunto e indicaciones</b>.</li>
+  <li><b>Turnos</b>: cada persona, si es para atención o conocimiento, quién se lo turnó, su estado (<span class="chip">Sin abrir</span>, <span class="chip naranja">Visto</span>, <span class="chip verde">Atendido</span>) y su comentario o archivo de conclusión.</li>
+  <li><b>Comentarios</b>: conversación entre las personas involucradas.</li>
+</ul>
+
+<h2>Botones de acción</h2>
+<p>Solo aparecen los botones que te corresponden según tu participación en el documento:</p>
+<table>
+  <tr><th style="width:26%">Botón</th><th>Quién lo ve y para qué sirve</th></tr>
+  <tr><td><span class="boton">Ver documento</span></td><td>Todos, si el registro tiene archivo. Abre el documento escaneado.</td></tr>
+  <tr><td><span class="boton">Turnar</span></td><td>Quien tiene un turno en el documento o quien lo registró. Envía el documento a más personas.</td></tr>
+  <tr><td><span class="boton lleno">Concluir mi turno</span></td><td>Quien tiene un turno <b>para atención</b> pendiente.</td></tr>
+  <tr><td><span class="boton lleno">Marcar como leído</span></td><td>Quien tiene un turno <b>para conocimiento</b> pendiente.</td></tr>
+  <tr><td><span class="boton">Editar</span> · <span class="boton" style="border-color:#c0392b;color:#c0392b">Cancelar registro</span></td><td>Solo el área que registró el documento, mientras esté activo (capítulo 7).</td></tr>
+</table>
+
+<h2>Turnar un documento</h2>
+<figure class="mediana"><div class="marco"><img src="img/08-turnar.png" /></div><figcaption>Figura 8. Ventana para turnar.</figcaption></figure>
+<ol class="pasos">
+  <li>Presiona <span class="boton">Turnar</span>.</li>
+  <li>En <b>Para su atención</b> escribe al menos dos letras del nombre y elige a las personas que deben responder.</li>
+  <li>En <b>Para su conocimiento</b> elige a quienes solo deben enterarse.</li>
+  <li>Escribe las <b>indicaciones</b> para ellos.</li>
+  <li>Presiona <span class="boton lleno">Turnar</span>. Las personas recibirán el documento en su bandeja y una notificación.</li>
+</ol>
+<div class="nota"><b>¿Por qué no aparece una persona?</b>La lista solo muestra a las personas a las que tu puesto puede turnar según la estructura del padrón (las mismas reglas del sistema anterior). Quienes ya tienen un turno activo en el documento se omiten.</div>
+<p>Si te equivocaste al turnar, en la tabla de <b>Turnos</b> aparece el enlace <b>Quitar</b> en los turnos que tú asignaste y que todavía pueden cancelarse.</p>
+
+<h2>Concluir tu turno</h2>
+<figure class="mediana"><div class="marco"><img src="img/09-concluir.png" /></div><figcaption>Figura 9. Ventana para concluir un turno.</figcaption></figure>
+<ol class="pasos">
+  <li>Presiona <span class="boton lleno">Concluir mi turno</span>.</li>
+  <li>Escribe un <b>comentario de conclusión</b> (máximo 255 caracteres) <b>o</b> adjunta el <b>documento de respuesta</b>. Uno de los dos es obligatorio.</li>
+  <li>Si tu área lo requiere, elige la <b>clasificación archivística</b> (sección, serie y subserie). Es opcional.</li>
+  <li>Presiona <span class="boton lleno">Concluir</span>.</li>
+</ol>
+<p>Cuando <b>todas</b> las personas con turno para atención concluyen, el documento pasa a estatus <span class="chip verde">Concluido</span>. Para turnos de conocimiento, el botón es <span class="boton lleno">Marcar como leído</span> y solo confirma que te enteraste.</p>
+
+<h2>Comentarios</h2>
+<p>Al final del expediente puedes escribir un <b>nuevo comentario</b>, dirigirlo opcionalmente a una persona del turno y adjuntar un archivo. Presiona <span class="boton lleno">Publicar comentario</span>. Los demás pueden responder dentro del mismo hilo.</p>
+
+<!-- ============================ 6 ============================ -->
+<h1><span class="num">6</span>Bandeja de salida (Enviados)</h1>
+<p>En <span class="ruta">Bandejas › Salida</span>, o con la pestaña <b>Enviados</b>, verás los documentos que <b>registró tu área</b> y el avance de las personas a quienes se turnaron. El número junto a <i>Enviados</i> es el total de registros pendientes de todos los años.</p>
+<figure class="mediana" style="width:55%"><div class="marco"><img src="img/10-salida.png" /></div><figcaption>Figura 10. Bandeja de salida.</figcaption></figure>
+<p>Cada tarjeta muestra el número de oficio, la fecha y hora de registro, el folio, la prioridad, el estatus o plazo, <b>Para:</b> a quién se turnó (por ejemplo, <i>“Martha Maldonado y 1 más”</i>) y cuántos turnos de atención ya se atendieron (<i>“0/2 atendidos”</i>). El indicador de la derecha se vuelve <b>✓✓</b> azul cuando el documento está concluido.</p>
+
+<h2>Filtros</h2>
+<ul>
+  <li><b>Buscador</b>: folio, número de oficio, asunto, remitente o nombre de un destinatario.</li>
+  <li><b>Estatus</b>: Pendientes, Concluidos, Cancelados o Todos.</li>
+  <li><b>Año</b> y <b>mes</b> de registro.</li>
+  <li><b>Prioridad</b>: Urgente u Ordinario.</li>
+</ul>
+<p>El botón <span class="boton lleno">+ Registrar documento</span> abre el formulario de captura (capítulo 7).</p>
+
+<h2>Vista rápida de un documento enviado</h2>
+<p>Al hacer clic en una tarjeta se abre la vista rápida con el <b>estatus de todos los turnos</b>: <span class="chip">Pendiente</span>, <span class="chip naranja">Visto</span>, <span class="chip verde">Atendido</span> o <span class="chip azul">Enterado</span> (conocimiento), además del comentario de conclusión de cada persona.</p>
+<figure class="mediana" style="width:50%"><div class="marco"><img src="img/11-salida-vista-rapida.png" /></div><figcaption>Figura 11. Vista rápida con el estatus de los turnos.</figcaption></figure>
+
+<!-- ============================ 7 ============================ -->
+<h1><span class="num">7</span>Registrar, editar y cancelar un documento</h1>
+<p>Entra a <span class="ruta">Bandejas › Registrar documento</span>. En la parte superior se muestra el <b>folio</b> que tendrá el registro; se confirma al guardar (si otra persona de tu área guarda antes, el sistema asigna el siguiente consecutivo).</p>
+<figure class="recorte"><div class="marco"><img src="img/12-registrar.png" /></div><figcaption>Figura 12. Formulario de registro (los campos con * son obligatorios).</figcaption></figure>
+
+<div class="sinsalto">
+<h3>Paso 1 · Datos del documento</h3>
+<ul>
+  <li><b>Fecha de recepción *</b>: por defecto, hoy.</li>
+  <li><b>Fecha del documento</b>, <b>Referencia / número de oficio</b>, <b>Medio de recepción</b> y número de <b>fojas</b>.</li>
+  <li><b>Seguimiento de (folio previo)</b>: si este oficio responde o da continuidad a otro registro tuyo, búscalo aquí para ligarlos.</li>
+</ul>
+</div>
+<div class="sinsalto">
+<h3>Paso 2 · Remitente y asunto</h3>
+<ul>
+  <li><b>Remitente *</b>: busca al servidor público por nombre. Si es una persona o institución externa, elige la opción <i>Remitente externo</i> y escribe su nombre en el campo que aparece.</li>
+  <li><b>Asunto *</b>: descripción del contenido del documento.</li>
+  <li><b>Indicaciones para quien atiende *</b>: qué debe hacer la persona que lo reciba.</li>
+</ul>
+</div>
+<div class="sinsalto">
+<h3>Paso 3 · Clasificación y plazo</h3>
+<ul>
+  <li><b>Serie *</b>: tipo de documento según la clasificación de tu área.</li>
+  <li><b>Prioridad *</b>: Ordinario o Urgente.</li>
+  <li><b>Fecha límite de atención *</b>.</li>
+  <li>Si la serie elegida maneja horario (por ejemplo, EVENTOS), aparecen además <b>Hora de inicio</b>, <b>Hora de término</b>, <b>Sede</b> y <b>Nombre del evento</b>. Estos datos alimentan la agenda.</li>
+</ul>
+</div>
+<div class="sinsalto">
+<h3>Paso 4 · Turnar a</h3>
+<ul>
+  <li><b>Para su atención</b>: deben responder; el registro se concluye cuando todos lo atienden.</li>
+  <li><b>Para su conocimiento</b>: solo se les informa. También puedes elegir <b>grupos</b> de destinatarios.</li>
+</ul>
+</div>
+<div class="sinsalto">
+<h3>Paso 5 · Documento escaneado</h3>
+<p>Presiona <span class="boton">Seleccionar archivos</span> y elige el archivo (PDF, imagen, Word o Excel).</p>
+</div>
+<p>Al terminar, presiona <span class="boton lleno">Registrar y turnar</span>. El documento aparecerá en tu bandeja de salida y en la bandeja de entrada de las personas seleccionadas.</p>
+<div class="importante"><b>“Tu usuario no tiene un departamento asignado”</b>Si ves este aviso, el sistema no puede generar el folio porque tu registro en el padrón no tiene área. Solicita a Informática que lo actualicen.</div>
+
+<h2>Editar un registro</h2>
+<p>Desde el expediente, presiona <span class="boton">Editar</span>. Se abre el mismo formulario con los datos actuales. Si cargas un archivo nuevo, <b>reemplaza</b> al anterior. Solo el área que registró el documento puede editarlo, y solo mientras no esté cancelado.</p>
+
+<h2>Cancelar un registro</h2>
+<p>Desde el expediente, presiona <span class="boton" style="border-color:#c0392b;color:#c0392b">Cancelar registro</span> y confirma. El documento queda con estatus <span class="chip">Cancelado</span>, se ve atenuado en todas las bandejas y ya no admite acciones. <b>Esta acción no se puede deshacer.</b></p>
+
+<!-- ============================ 8 ============================ -->
+<h1><span class="num">8</span>Búsqueda de folios</h1>
+<p>En <span class="ruta">Consultas › Búsqueda de folios</span> puedes localizar cualquier documento al que tengas acceso (los que registraste, los que te turnaron o los que turnaste).</p>
+<figure class="recorte"><div class="marco"><img src="img/13-busqueda.png" /></div><figcaption>Figura 13. Resultados de búsqueda.</figcaption></figure>
+<ol class="pasos">
+  <li>Escribe un folio, número de oficio, palabra del asunto o de las indicaciones, o el nombre del remitente.</li>
+  <li>Presiona <span class="boton lleno">Buscar</span> o la tecla Enter.</li>
+  <li>En la tabla, usa <b>Abrir</b> para ir al expediente.</li>
+</ol>
+<p>Se muestran hasta <b>200 resultados</b>, los más recientes primero. Si buscas algo muy general, agrega más palabras o usa el folio completo.</p>
+
+<!-- ============================ 9 ============================ -->
+<h1><span class="num">9</span>Agenda</h1>
+<p>En <span class="ruta">Consultas › Agenda</span> se muestran, en un calendario mensual, las <b>fechas límite</b> de los documentos que registraste o que te turnaron.</p>
+<figure class="recorte"><div class="marco"><img src="img/14-agenda.png" /></div><figcaption>Figura 14. Agenda de fechas límite.</figcaption></figure>
+<ul>
+  <li>Colores: <span class="chip" style="background:#fdf7d6;color:#9a8100">Ordinario</span> amarillo, <span class="chip naranja">Urgente</span> naranja y <span class="chip" style="background:#e5e4e3;color:#56534f">Concluido</span> gris.</li>
+  <li>Cambia de mes con <b>‹</b> y <b>›</b>; <b>Hoy</b> regresa al mes actual.</li>
+  <li>Haz clic en un día para ver abajo la lista de documentos que vencen, con su horario y asunto. El folio es un enlace al expediente.</li>
+</ul>
+
+<!-- ============================ 10 ============================ -->
+<h1><span class="num">10</span>Archivo de concentración</h1>
+<p>En <span class="ruta">Consultas › Archivo de concentración</span> aparecen los documentos que registraste y que ya cumplieron su tiempo en el <b>archivo de trámite</b>, según el plazo de su serie (2 años si la serie no lo define). Estos documentos deben transferirse físicamente al archivo de concentración.</p>
+<figure class="recorte"><div class="marco"><img src="img/15-concentracion.png" /></div><figcaption>Figura 15. Documentos para transferir.</figcaption></figure>
+<p>Usa el campo <b>Filtrar…</b> para localizar documentos en la tabla. Si no tienes documentos pendientes, verás el mensaje <i>“No tienes documentos pendientes de transferir”</i>.</p>
+
+<!-- ============================ 11 ============================ -->
+<h1><span class="num">11</span>Reportes</h1>
+<p>En <span class="ruta">Consultas › Reportes</span> puedes conocer el avance de los documentos registrados en un periodo (por fecha de recepción).</p>
+<figure class="recorte"><div class="marco"><img src="img/16-reportes.png" /></div><figcaption>Figura 16. Reporte de avance.</figcaption></figure>
+<ol class="pasos">
+  <li>Elige las fechas <b>Desde</b> y <b>Hasta</b>.</li>
+  <li>Presiona <span class="boton lleno">Consultar</span>.</li>
+  <li>Revisa las cifras: <b>Registrados</b>, <b>Pendientes</b>, <b>Concluidos</b> (con su porcentaje) y <b>Cancelados</b>.</li>
+  <li>Debajo, la gráfica <b>Turnos de atención pendientes por persona</b> muestra quién tiene más documentos por atender.</li>
+  <li>Con <span class="boton">Descargar Excel</span> obtienes el detalle en una hoja de cálculo.</li>
+</ol>
+<p>Los administradores ven además la casilla <b>Todas las áreas</b> para consultar el reporte general.</p>
+
+<!-- ============================ 12 ============================ -->
+<h1><span class="num">12</span>Presidencia: agenda y eventos legislativos</h1>
+<p>Este menú está disponible para el personal con rol <b>Presidencia</b> y para los administradores.</p>
+
+<h2>Agenda legislativa</h2>
+<p>En <span class="ruta">Presidencia › Agenda legislativa</span> se concentran en un calendario los documentos de la serie <b>EVENTOS</b> y los <b>eventos legislativos</b> (sesiones, comisiones, comparecencias). Cada sede tiene su color y cada evento muestra su hora.</p>
+<figure class="recorte"><div class="marco"><img src="img/17-agenda-legislativa.png" /></div><figcaption>Figura 17. Agenda legislativa.</figcaption></figure>
+<ul>
+  <li><b>Sede</b>: filtra el calendario para ver solo los eventos de un salón o lugar.</li>
+  <li><b>Fecha inicial</b> y <b>Fecha final</b>: definen el periodo de los reportes impresos.</li>
+  <li><span class="boton lleno">Agenda general</span> y <span class="boton">Agenda comisiones</span> generan la versión para imprimir del periodo indicado.</li>
+  <li>Haz clic en un día para ver sus eventos, y en un evento para ver el detalle.</li>
+</ul>
+<figure class="mediana"><div class="marco"><img src="img/18-agenda-detalle.png" /></div><figcaption>Figura 18. Detalle de un evento de la agenda.</figcaption></figure>
+<p>El detalle incluye indicación, nombre del evento, folio, referencia, remitente, fecha, horario, sede y, en los eventos legislativos, las comisiones participantes. <span class="boton">Abrir documento</span> lleva al expediente cuando el evento proviene de un registro.</p>
+
+<h2>Eventos legislativos</h2>
+<p>En <span class="ruta">Presidencia › Eventos legislativos</span> se capturan las sesiones, reuniones de comisión y comparecencias que deben aparecer en la agenda.</p>
+<figure class="recorte"><div class="marco"><img src="img/19-eventos-legislativos.png" /></div><figcaption>Figura 19. Lista de eventos legislativos del año.</figcaption></figure>
+<p>La tabla muestra fecha, horario, tipo, evento, sede e integrantes de cada evento del año elegido. Usa <b>Editar</b> o <b>Eliminar</b> en cada fila.</p>
+<h3>Capturar un evento</h3>
+<figure class="mediana"><div class="marco"><img src="img/20-evento-nuevo.png" /></div><figcaption>Figura 20. Captura de un evento legislativo.</figcaption></figure>
+<ol class="pasos">
+  <li>Presiona <span class="boton lleno">+ Nuevo evento</span>.</li>
+  <li>Indica <b>fecha</b>, <b>hora de inicio</b> y <b>hora de término</b>.</li>
+  <li>Elige <b>tipo de evento</b>, <b>sede</b> y <b>modalidad</b>. El sistema revisa de inmediato si la sede está libre; si ya hay un evento agendado en ese horario, lo indica y no permite guardar.</li>
+  <li>Si el tipo es <b>Comisión</b>, selecciona las <b>comisiones</b> participantes y el <b>tipo de reunión</b>.</li>
+  <li>Escribe el <b>nombre del evento</b> y, cuando se solicite, la <b>materia</b>.</li>
+  <li>Presiona <span class="boton lleno">Guardar</span>. El evento aparece de inmediato en la agenda legislativa.</li>
+</ol>
+<div class="nota"><b>Caracteres especiales</b>Por compatibilidad con la agenda, evita emojis o símbolos poco comunes en los nombres; el sistema avisa si algún carácter no puede guardarse.</div>
+
+<!-- ============================ 13 ============================ -->
+<h1><span class="num">13</span>Administración</h1>
+<p>Este menú solo está disponible para el rol <b>Administrador</b>.</p>
+
+<h2>Clasificación archivística</h2>
+<p>En <span class="ruta">Administración › Clasificación archivística</span> se mantiene el cuadro general de clasificación de cada área, en tres niveles: <b>secciones</b>, <b>series</b> y <b>subseries</b>.</p>
+<figure class="recorte"><div class="marco"><img src="img/21-clasificacion.png" /></div><figcaption>Figura 21. Cuadro de clasificación.</figcaption></figure>
+<ul>
+  <li>Filtra por área con el selector superior.</li>
+  <li>Haz clic en una sección para ver sus series, y en una serie para ver sus subseries.</li>
+  <li><span class="boton lleno">Agregar</span> crea un elemento en la columna correspondiente; <b>Editar</b> cambia su código, nombre o plazo; <b>Desactivar</b> lo oculta de los formularios sin borrar la información histórica (puede volver a <b>Activarse</b>).</li>
+</ul>
+
+<h2>Grupos de destinatarios</h2>
+<p>En <span class="ruta">Administración › Grupos de destinatarios</span> se crean listas de personas para turnar a varias a la vez. Al turnar a un grupo, el documento llega a cada integrante.</p>
+<figure class="recorte"><div class="marco"><img src="img/22-grupos.png" /></div><figcaption>Figura 22. Grupos de destinatarios.</figcaption></figure>
+<ol class="pasos">
+  <li>Presiona <span class="boton lleno">+ Nuevo grupo</span>.</li>
+  <li>Escribe el <b>nombre del grupo</b> y agrega a los <b>integrantes</b>.</li>
+  <li>Presiona <span class="boton lleno">Guardar</span>. Usa <b>Editar</b> o <b>Eliminar</b> en cada tarjeta para modificarlo.</li>
+</ol>
+
+<h2>Roles de usuario</h2>
+<p>En <span class="ruta">Administración › Roles de usuario</span> se define qué puede ver cada persona. Por omisión, todos son <b>Usuario</b>.</p>
+<figure class="recorte"><div class="marco"><img src="img/23-roles.png" /></div><figcaption>Figura 23. Asignación de roles.</figcaption></figure>
+<ol class="pasos">
+  <li>En <b>Usuario</b>, busca a la persona por nombre o RFC y selecciónala.</li>
+  <li>En <b>Rol</b>, elige <i>Usuario</i>, <i>Presidencia</i> o <i>Administrador</i>.</li>
+  <li>Presiona <span class="boton lleno">Asignar rol</span>. La tabla <b>Roles asignados</b> muestra las asignaciones vigentes y permite buscarlas.</li>
+</ol>
+<div class="importante"><b>Importante</b>El cambio de rol se aplica la próxima vez que la persona inicie sesión.</div>
+
+<!-- ============================ 14 ============================ -->
+<h1><span class="num">14</span>Preguntas frecuentes</h1>
+<h3>Abrí un documento pero sigue apareciendo como “sin abrir”.</h3>
+<p>El turno se marca como visto cuando abres el <b>archivo</b> con <span class="boton">Ver documento</span>. Consultar solo la vista rápida no lo marca.</p>
+<h3>Concluí mi turno, pero el documento sigue pendiente.</h3>
+<p>Un documento se concluye cuando <b>todas</b> las personas con turno para atención lo atienden. Revisa en el expediente o en la vista rápida quién falta.</p>
+<h3>No encuentro a una persona para turnarle.</h3>
+<p>Solo aparecen las personas a las que tu puesto puede turnar según el padrón y que tienen una cuenta activa. Si debería aparecer, repórtalo a Informática.</p>
+<h3>No veo los documentos atendidos de meses anteriores.</h3>
+<p>En la bandeja de entrada, cambia el filtro a <b>Atendidos</b> y elige el año y el mes. En la bandeja de salida, usa los filtros de estatus, año y mes.</p>
+<h3>¿Puedo modificar un documento que ya registré?</h3>
+<p>Sí, con <span class="boton">Editar</span> desde el expediente, siempre que no esté cancelado. Si lo cancelaste, ya no puede modificarse; registra uno nuevo y, si aplica, lígalo con <b>Seguimiento de</b>.</p>
+<h3>El sistema me sacó sin avisar.</h3>
+<p>Tras una hora sin actividad aparece un aviso de 60 segundos; si no respondes, la sesión se cierra por seguridad. Vuelve a iniciar sesión; lo que ya guardaste no se pierde.</p>
+<h3>¿Funciona en el celular?</h3>
+<p>Sí. Las bandejas, la vista rápida y los formularios se adaptan a pantallas pequeñas; el menú se abre con el botón ☰.</p>
+
+<!-- ============================ 15 ============================ -->
+<h1><span class="num">15</span>Glosario</h1>
+<table>
+  <tr><th style="width:30%">Término</th><th>Definición</th></tr>
+  <tr><td>Archivo de trámite</td><td>Etapa en la que el documento está en uso por el área que lo generó o recibió.</td></tr>
+  <tr><td>Archivo de concentración</td><td>Etapa a la que se transfieren los documentos cuando concluye su plazo en trámite.</td></tr>
+  <tr><td>Expediente</td><td>Página que reúne datos, archivo, turnos y comentarios de un registro.</td></tr>
+  <tr><td>Fojas</td><td>Número de hojas del documento físico.</td></tr>
+  <tr><td>Folio</td><td>Identificador único del registro en el sistema.</td></tr>
+  <tr><td>Lector delegado</td><td>Persona autorizada para consultar, sin modificar, las bandejas de su titular.</td></tr>
+  <tr><td>Referencia</td><td>Número de oficio original del documento.</td></tr>
+  <tr><td>Remitente</td><td>Persona o institución que envía el documento.</td></tr>
+  <tr><td>Sección / Serie / Subserie</td><td>Niveles del cuadro general de clasificación archivística.</td></tr>
+  <tr><td>Sede</td><td>Salón o lugar donde se realiza un evento.</td></tr>
+  <tr><td>Turno</td><td>Asignación de un documento a una persona, para su atención o para su conocimiento.</td></tr>
+</table>
+<p style="margin-top:10mm;color:var(--gris);font-size:9pt">Para dudas o reportes sobre el sistema, comunícate con el área de Informática de la Secretaría de Administración y Finanzas · Conmutador (722) 279-6400.</p>
+
+</body>
+</html>
