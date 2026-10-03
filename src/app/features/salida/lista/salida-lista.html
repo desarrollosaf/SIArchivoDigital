@@ -1,98 +1,123 @@
-<section class="pagina">
-  <header class="pagina__encabezado">
-    <div>
-      <h1>Bandeja de salida</h1>
-      <p>Documentos que registraste y su avance con las personas a quienes los turnaste.</p>
-    </div>
-    <a class="btn btn--primary" routerLink="nuevo">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M12 5v14M5 12h14"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-        />
-      </svg>
-      <span>Registrar documento</span>
-    </a>
-  </header>
+<section class="pagina intranet">
+  <app-bandeja-pestanas activa="enviados" />
 
-  <div class="tarjeta">
-    <div class="tabla-header">
-      <div class="tabla-header__titulo">
-        <h2>Mis registros</h2>
-        @if (!cargando() && !error()) {
-          <p>{{ registros().length }} {{ registros().length === 1 ? 'registro' : 'registros' }}</p>
-        }
-      </div>
-      <div class="filtros">
-        <select
-          [ngModel]="estatus()"
-          (ngModelChange)="onEstatusChange($event)"
-          aria-label="Filtrar por estatus"
-        >
-          <option value="pendientes">Pendientes</option>
-          <option value="concluidos">Concluidos</option>
-          <option value="cancelados">Cancelados</option>
-          <option value="todos">Todos</option>
-        </select>
-        <app-filtro-anio-mes
-          [anio]="anio()"
-          [mes]="mes()"
-          (anioChange)="onAnioChange($event)"
-          (mesChange)="onMesChange($event)"
-        />
-        <div class="tabla-header__busqueda">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
-            <path
-              d="m20 20-3.2-3.2"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-          <input
-            type="text"
-            placeholder="Filtrar resultados…"
-            [ngModel]="busqueda()"
-            (ngModelChange)="busqueda.set($event)"
-          />
-          @if (busqueda()) {
-            <button type="button" class="limpiar-busqueda" (click)="busqueda.set('')">✕</button>
-          }
-        </div>
-      </div>
-    </div>
-
-    @if (cargando()) {
-      <div class="tabla-skeleton">
-        <div class="tabla-skeleton__header"></div>
-        @for (n of [1, 2, 3, 4, 5, 6]; track n) {
-          <div class="tabla-skeleton__row"></div>
-        }
-      </div>
-    } @else if (error()) {
-      <p class="aviso aviso--error">{{ error() }}</p>
-    } @else if (registros().length === 0) {
-      <p class="aviso">No hay registros con estos filtros.</p>
-    } @else {
-      <ag-grid-angular
-        class="grid-ag"
-        [theme]="gridTheme"
-        [localeText]="localeText"
-        [rowData]="registros()"
-        [columnDefs]="columnas"
-        [rowClassRules]="clasesFila"
-        [quickFilterText]="busqueda()"
-        [pagination]="true"
-        [paginationPageSize]="20"
-        [paginationPageSizeSelector]="[20, 50, 100]"
-        [domLayout]="'autoHeight'"
-        [enableCellTextSelection]="true"
-        [ensureDomOrder]="true"
-        (gridReady)="onGridReady()"
+  <div class="toolbar">
+    <div class="search">
+      <app-icono name="buscar" />
+      <input
+        type="text"
+        placeholder="Buscar por folio, oficio, asunto o destinatario…"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
       />
-    }
+    </div>
+    <select [ngModel]="estatus()" (ngModelChange)="onEstatusChange($event)" aria-label="Filtrar por estatus">
+      <option value="pendientes">Pendientes</option>
+      <option value="concluidos">Concluidos</option>
+      <option value="cancelados">Cancelados</option>
+      <option value="todos">Todos</option>
+    </select>
+    <app-filtro-anio-mes
+      [anio]="anio()"
+      [mes]="mes()"
+      (anioChange)="onAnioChange($event)"
+      (mesChange)="onMesChange($event)"
+    />
+    <a class="btn-i btn-i-primary" routerLink="nuevo"><app-icono name="nuevo" /> Registrar documento</a>
   </div>
+
+  <div class="filtros-prio">
+    <small>Prioridad:</small>
+    <button type="button" class="badge alta filtro-prio" [class.on]="prioridad() === 'alta'" (click)="alternarPrioridad('alta')">
+      <span class="dot alta"></span>Urgente
+    </button>
+    <button type="button" class="badge media filtro-prio" [class.on]="prioridad() === 'media'" (click)="alternarPrioridad('media')">
+      <span class="dot media"></span>Ordinario
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <div class="bandeja-cards">
+      @for (n of [1, 2, 3, 4, 5]; track n) {
+        <div class="band-card sk-card">
+          <span class="sk sk-circle" style="width: 42px; height: 42px"></span>
+          <div class="band-main">
+            <span class="sk sk-line" style="width: 45%; margin-bottom: 8px"></span>
+            <span class="sk sk-line" style="width: 70%; margin-bottom: 8px"></span>
+            <span class="sk sk-line" style="width: 90%"></span>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <p class="aviso aviso--error">{{ error() }}</p>
+  } @else if (filtrados().length === 0) {
+    <div class="vacio">
+      <app-icono name="salida" />
+      @if (registros().length === 0) {
+        <b>Sin documentos</b>
+        <span>No hay registros con estos filtros.</span>
+      } @else {
+        <b>Sin resultados</b>
+        <span>Ningún documento coincide con la búsqueda.</span>
+      }
+    </div>
+  } @else {
+    <div class="bandeja-cards">
+      @for (r of visibles(); track r.id) {
+        <div
+          class="band-card"
+          [class.cancelada]="r.estatus === 'Cancelado'"
+          role="button"
+          tabindex="0"
+          (click)="abierto.set(r)"
+          (keydown.enter)="abierto.set(r)"
+        >
+          <div class="band-ic" [class]="clasePrioridad(r.urgente)"><span></span></div>
+          <div class="band-main">
+            <div class="band-top">
+              <span class="band-titulo">{{ r.referencia || 'Folio ' + r.folio }}</span>
+              <span class="band-fecha">{{ fechaHora(r.creado) }}</span>
+            </div>
+            <div class="band-sub">
+              <span class="folio">{{ r.folio }}</span>
+              <span class="badge" [class]="clasePrioridad(r.urgente)">{{ r.urgente ? 'Urgente' : 'Ordinario' }}</span>
+              @if (r.estatus === 'Cancelado') {
+                <span class="badge">Cancelado</span>
+              } @else if (r.estatus === 'Concluido') {
+                <span class="badge baja">Concluido</span>
+              } @else if (plazo(r.diasRestantes); as p) {
+                <span class="badge" [class]="p.clase">{{ p.texto }}</span>
+              }
+              <span class="band-quien">Para: <b>{{ destinatarios(r) }}</b></span>
+              @if (avance(r); as a) {
+                @if (a.total) {
+                  <span class="band-quien">· {{ a.hechos }}/{{ a.total }} atendidos</span>
+                }
+              }
+            </div>
+            <div class="band-desc">{{ r.asunto }}</div>
+          </div>
+          <span
+            class="estado-lectura"
+            [class.visto]="r.estatus === 'Concluido'"
+            [title]="r.estatus === 'Concluido' ? 'Concluido' : 'En proceso'"
+          >
+            <app-icono [name]="r.estatus === 'Concluido' ? 'doblecheck' : 'check'" />
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="pie-lista">
+      <small>Mostrando {{ desde() }}–{{ hasta() }} de {{ filtrados().length }}</small>
+      @if (totalPaginas() > 1) {
+        <app-paginador [paginaActual]="pagina()" [totalPaginas]="totalPaginas()" (cambiarPagina)="pagina.set($event)" />
+      }
+    </div>
+  }
+
+  @if (abierto(); as r) {
+    <app-vista-rapida [registroId]="r.id" modo="salida" (cerrar)="abierto.set(null)" />
+  }
 </section>

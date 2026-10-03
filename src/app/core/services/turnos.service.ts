@@ -10,6 +10,8 @@ export interface TurnoBandeja {
   id: number;
   registroId: number;
   folio: string;
+  /** Número de oficio del documento. */
+  referencia: string | null;
   asunto: string;
   indicaciones: string;
   remitente: string;

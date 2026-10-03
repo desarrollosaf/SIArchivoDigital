@@ -1,30 +1,25 @@
-import { Component, ElementRef, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, ICellRendererParams, RowClassRules } from 'ag-grid-community';
 import { FiltroTurnos, TurnoBandeja, TurnosService } from '../../core/services/turnos.service';
-import { AG_GRID_LOCALE, siadGridTheme } from '../../shared/ag-grid/ag-grid-setup';
-import { LinkCeldaComponent } from '../../shared/ag-grid/link-celda';
-import { habilitarArrastreHorizontal } from '../../shared/ag-grid/arrastre-horizontal';
-import { FiltroAnioMes } from '../../shared/filtro-anio-mes/filtro-anio-mes';
+import { BandejaPestanas } from '../../shared/bandeja/bandeja-pestanas';
 import {
-  celdaFolio,
-  etiquetaPlazo,
-  etiquetaPrioridad,
-  etiquetaTipoTurno,
-  fechaCorta,
-} from '../../shared/estatus/estatus';
-
-const CLASES_FILA_TURNO: RowClassRules<TurnoBandeja> = {
-  'fila-cancelada': (p) => !!p.data?.cancelado,
-};
+  ClasePrioridad,
+  clasePrioridad,
+  fechaHora,
+  normalizar,
+  plazo,
+  POR_PAGINA,
+} from '../../shared/bandeja/bandeja-util';
+import { VistaRapida } from '../../shared/bandeja/vista-rapida';
+import { FiltroAnioMes } from '../../shared/filtro-anio-mes/filtro-anio-mes';
+import { Icono } from '../../shared/icono/icono';
+import { Paginador } from '../../shared/paginador/paginador';
 
 @Component({
   selector: 'app-bandeja-entrada',
   standalone: true,
-  imports: [FormsModule, AgGridAngular, FiltroAnioMes],
+  imports: [FormsModule, FiltroAnioMes, BandejaPestanas, Icono, Paginador, VistaRapida],
   templateUrl: './entrada.html',
-  styleUrl: './entrada.scss',
 })
 export class BandejaEntrada {
   protected readonly filtro = signal<FiltroTurnos>('pendientes');
@@ -35,98 +30,39 @@ export class BandejaEntrada {
   protected readonly turnos = signal<TurnoBandeja[]>([]);
   protected readonly soloLectura = signal(false);
   protected readonly busqueda = signal('');
+  protected readonly prioridad = signal<ClasePrioridad | null>(null);
+  protected readonly pagina = signal(1);
+  protected readonly abierto = signal<TurnoBandeja | null>(null);
 
-  protected readonly gridTheme = siadGridTheme;
-  protected readonly localeText = AG_GRID_LOCALE;
-  protected readonly clasesFila = CLASES_FILA_TURNO;
+  protected readonly fechaHora = fechaHora;
+  protected readonly plazo = plazo;
+  protected readonly clasePrioridad = clasePrioridad;
 
-  protected readonly columnas: ColDef<TurnoBandeja>[] = [
-    {
-      field: 'folio',
-      headerName: 'Folio',
-      width: 175,
-      autoHeight: true,
-      cellClass: 'celda-larga',
-      cellRenderer: (p: ICellRendererParams<TurnoBandeja>) =>
-        p.data
-          ? celdaFolio(p.data.folio, `Recibido ${fechaCorta(p.data.recibido)}`, [
-              p.data.nuevo ? '<span class="etiqueta etiqueta--vino">Nuevo</span>' : '',
-              p.data.urgente ? etiquetaPrioridad(true) : '',
-            ])
-          : '',
-    },
-    {
-      field: 'asunto',
-      headerName: 'Asunto',
-      minWidth: 240,
-      flex: 2.4,
-      wrapText: true,
-      autoHeight: true,
-      cellClass: 'celda-larga',
-    },
-    {
-      field: 'remitente',
-      headerName: 'Remitente',
-      minWidth: 150,
-      flex: 1,
-      wrapText: true,
-      autoHeight: true,
-      cellClass: 'celda-larga',
-    },
-    {
-      field: 'turnadoPor',
-      headerName: 'Turnado por',
-      minWidth: 140,
-      flex: 1,
-      wrapText: true,
-      autoHeight: true,
-      cellClass: 'celda-larga',
-    },
-    {
-      field: 'tipo',
-      headerName: 'Para',
-      width: 130,
-      cellRenderer: (p: ICellRendererParams<TurnoBandeja>) =>
-        p.data ? etiquetaTipoTurno(p.data.tipo) : '',
-    },
-    {
-      field: 'fechaLimite',
-      headerName: 'Límite',
-      width: 112,
-      valueFormatter: (p) => fechaCorta(p.value),
-    },
-    {
-      colId: 'plazo',
-      headerName: 'Plazo',
-      width: 150,
-      valueGetter: (p) => p.data?.diasRestantes ?? null,
-      cellRenderer: (p: ICellRendererParams<TurnoBandeja>) =>
-        p.data?.cancelado
-          ? '<span class="etiqueta etiqueta--gris">Cancelado</span>'
-          : p.data && this.filtro() === 'pendientes'
-            ? etiquetaPlazo(p.data.diasRestantes)
-            : '<span class="etiqueta etiqueta--verde">Atendido</span>',
-    },
-    {
-      headerName: '',
-      width: 110,
-      pinned: 'right',
-      sortable: false,
-      filter: false,
-      resizable: false,
-      cellRenderer: LinkCeldaComponent,
-      cellRendererParams: {
-        label: 'Abrir',
-        icono: 'ojo',
-        routerLink: (p: ICellRendererParams<TurnoBandeja>) => ['/documentos', p.data!.registroId],
-      },
-    },
-  ];
+  protected readonly filtrados = computed(() => {
+    const q = normalizar(this.busqueda().trim());
+    const prio = this.prioridad();
+    return this.turnos().filter(
+      (t) =>
+        (!prio || clasePrioridad(t.urgente) === prio) &&
+        (!q ||
+          normalizar(`${t.folio} ${t.referencia ?? ''} ${t.asunto} ${t.remitente} ${t.turnadoPor ?? ''}`).includes(q)),
+    );
+  });
 
-  constructor(
-    private readonly turnosService: TurnosService,
-    private readonly elementRef: ElementRef<HTMLElement>,
-  ) {
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.filtrados().length / POR_PAGINA)));
+  protected readonly visibles = computed(() =>
+    this.filtrados().slice((this.pagina() - 1) * POR_PAGINA, this.pagina() * POR_PAGINA),
+  );
+  protected readonly desde = computed(() => (this.filtrados().length ? (this.pagina() - 1) * POR_PAGINA + 1 : 0));
+  protected readonly hasta = computed(() => Math.min(this.pagina() * POR_PAGINA, this.filtrados().length));
+
+  constructor(private readonly turnosService: TurnosService) {
+    // Al cambiar la búsqueda o la prioridad se vuelve a la primera página.
+    effect(() => {
+      this.busqueda();
+      this.prioridad();
+      this.pagina.set(1);
+    });
     this.cargar();
   }
 
@@ -134,6 +70,10 @@ export class BandejaEntrada {
     if (this.filtro() === filtro) return;
     this.filtro.set(filtro);
     this.cargar();
+  }
+
+  alternarPrioridad(p: ClasePrioridad): void {
+    this.prioridad.update((actual) => (actual === p ? null : p));
   }
 
   onAnioChange(anio: number): void {
@@ -146,13 +86,16 @@ export class BandejaEntrada {
     this.cargar();
   }
 
-  onGridReady(): void {
-    habilitarArrastreHorizontal(this.elementRef.nativeElement);
+  /** Abrir el archivo marca el turno como visto en el servidor; se refleja aquí sin recargar. */
+  marcarVisto(t: TurnoBandeja): void {
+    if (t.visto || this.soloLectura()) return;
+    this.turnos.update((lista) => lista.map((x) => (x.id === t.id ? { ...x, visto: true, nuevo: false } : x)));
   }
 
   private cargar(): void {
     this.cargando.set(true);
     this.error.set(null);
+    this.pagina.set(1);
     // Los pendientes se muestran todos; los atendidos se filtran por periodo porque crecen sin fin.
     const atendidos = this.filtro() === 'atendidos';
     this.turnosService

@@ -98,6 +98,7 @@ export class TurnosService {
           id: Number(t.id),
           registroId: Number(r.id),
           folio: r.folio,
+          referencia: r.referenciaDocumento,
           asunto: r.descripcionDoc,
           indicaciones: t.indicacionesTurno || r.tituloDoc,
           remitente: nombreRemitente(r, nombres),

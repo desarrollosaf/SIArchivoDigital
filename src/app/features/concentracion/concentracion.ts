@@ -13,7 +13,7 @@ import { etiquetaEstatus, fechaCorta } from '../../shared/estatus/estatus';
   standalone: true,
   imports: [FormsModule, AgGridAngular],
   templateUrl: './concentracion.html',
-  styleUrl: '../entrada/entrada.scss',
+  styleUrl: './concentracion.scss',
 })
 export class Concentracion {
   protected readonly cargando = signal(true);

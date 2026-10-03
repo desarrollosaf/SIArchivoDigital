@@ -1,109 +1,134 @@
-<section class="pagina">
-  <header class="pagina__encabezado">
-    <div>
-      <h1>Bandeja de entrada</h1>
-      <p>Documentos que te turnaron para su atención o conocimiento.</p>
-    </div>
-    <div class="pestanas" role="tablist">
-      <button
-        type="button"
-        role="tab"
-        [class.activa]="filtro() === 'pendientes'"
-        (click)="cambiarFiltro('pendientes')"
-      >
-        Pendientes
-      </button>
-      <button
-        type="button"
-        role="tab"
-        [class.activa]="filtro() === 'atendidos'"
-        (click)="cambiarFiltro('atendidos')"
-      >
-        Atendidos
-      </button>
-    </div>
-  </header>
+<section class="pagina intranet">
+  <app-bandeja-pestanas activa="recibidos" />
 
   @if (soloLectura()) {
-    <p class="aviso aviso--caja">
-      Estás consultando la bandeja de tu titular en modo de solo lectura.
-    </p>
+    <p class="aviso aviso--caja">Estás consultando la bandeja de tu titular en modo de solo lectura.</p>
   }
 
-  <div class="tarjeta">
-    <div class="tabla-header">
-      <div class="tabla-header__titulo">
-        <h2>{{ filtro() === 'pendientes' ? 'Turnos por atender' : 'Turnos atendidos' }}</h2>
-        @if (!cargando() && !error()) {
-          <p>{{ turnos().length }} {{ turnos().length === 1 ? 'turno' : 'turnos' }}</p>
-        }
-      </div>
-      <div class="filtros">
-        @if (filtro() === 'atendidos') {
-          <app-filtro-anio-mes
-            [anio]="anio()"
-            [mes]="mes()"
-            (anioChange)="onAnioChange($event)"
-            (mesChange)="onMesChange($event)"
-          />
-        }
-        <div class="tabla-header__busqueda">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
-            <path
-              d="m20 20-3.2-3.2"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-          <input
-            type="text"
-            placeholder="Filtrar por folio, asunto, remitente…"
-            [ngModel]="busqueda()"
-            (ngModelChange)="busqueda.set($event)"
-          />
-          @if (busqueda()) {
-            <button type="button" class="limpiar-busqueda" (click)="busqueda.set('')">✕</button>
-          }
-        </div>
-      </div>
+  <div class="toolbar">
+    <div class="search">
+      <app-icono name="buscar" />
+      <input
+        type="text"
+        placeholder="Buscar por folio, oficio, asunto o remitente…"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
     </div>
-
-    @if (cargando()) {
-      <div class="tabla-skeleton">
-        <div class="tabla-skeleton__header"></div>
-        @for (n of [1, 2, 3, 4, 5, 6]; track n) {
-          <div class="tabla-skeleton__row"></div>
-        }
-      </div>
-    } @else if (error()) {
-      <p class="aviso aviso--error">{{ error() }}</p>
-    } @else if (turnos().length === 0) {
-      <p class="aviso">
-        {{
-          filtro() === 'pendientes'
-            ? 'No tienes turnos pendientes. ¡Todo al día!'
-            : 'No hay turnos atendidos en este periodo.'
-        }}
-      </p>
-    } @else {
-      <ag-grid-angular
-        class="grid-ag"
-        [theme]="gridTheme"
-        [localeText]="localeText"
-        [rowData]="turnos()"
-        [columnDefs]="columnas"
-        [rowClassRules]="clasesFila"
-        [quickFilterText]="busqueda()"
-        [pagination]="true"
-        [paginationPageSize]="20"
-        [paginationPageSizeSelector]="[20, 50, 100]"
-        [domLayout]="'autoHeight'"
-        [enableCellTextSelection]="true"
-        [ensureDomOrder]="true"
-        (gridReady)="onGridReady()"
+    <select [ngModel]="filtro()" (ngModelChange)="cambiarFiltro($event)" aria-label="Estatus de los turnos">
+      <option value="pendientes">Pendientes</option>
+      <option value="atendidos">Atendidos</option>
+    </select>
+    @if (filtro() === 'atendidos') {
+      <app-filtro-anio-mes
+        [anio]="anio()"
+        [mes]="mes()"
+        (anioChange)="onAnioChange($event)"
+        (mesChange)="onMesChange($event)"
       />
     }
   </div>
+
+  <div class="filtros-prio">
+    <small>Prioridad:</small>
+    <button type="button" class="badge alta filtro-prio" [class.on]="prioridad() === 'alta'" (click)="alternarPrioridad('alta')">
+      <span class="dot alta"></span>Urgente
+    </button>
+    <button type="button" class="badge media filtro-prio" [class.on]="prioridad() === 'media'" (click)="alternarPrioridad('media')">
+      <span class="dot media"></span>Ordinario
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <div class="bandeja-cards">
+      @for (n of [1, 2, 3, 4, 5]; track n) {
+        <div class="band-card sk-card">
+          <span class="sk sk-circle" style="width: 42px; height: 42px"></span>
+          <div class="band-main">
+            <span class="sk sk-line" style="width: 45%; margin-bottom: 8px"></span>
+            <span class="sk sk-line" style="width: 70%; margin-bottom: 8px"></span>
+            <span class="sk sk-line" style="width: 90%"></span>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <p class="aviso aviso--error">{{ error() }}</p>
+  } @else if (filtrados().length === 0) {
+    <div class="vacio">
+      <app-icono name="entrada" />
+      @if (turnos().length === 0) {
+        <b>{{ filtro() === 'pendientes' ? 'No tienes turnos pendientes' : 'Sin turnos atendidos' }}</b>
+        <span>{{ filtro() === 'pendientes' ? '¡Todo al día!' : 'No hay turnos atendidos en este periodo.' }}</span>
+      } @else {
+        <b>Sin resultados</b>
+        <span>Ningún documento coincide con la búsqueda.</span>
+      }
+    </div>
+  } @else {
+    <div class="bandeja-cards">
+      @for (t of visibles(); track t.id) {
+        <div
+          class="band-card"
+          [class.nuevo]="!t.visto && !t.cancelado"
+          [class.cancelada]="t.cancelado"
+          role="button"
+          tabindex="0"
+          (click)="abierto.set(t)"
+          (keydown.enter)="abierto.set(t)"
+        >
+          <div class="band-ic" [class]="clasePrioridad(t.urgente)"><span></span></div>
+          <div class="band-main">
+            <div class="band-top">
+              <span class="band-titulo">
+                @if (!t.visto && !t.cancelado) {
+                  <span class="dot-nuevo"></span>
+                }
+                {{ t.referencia || 'Folio ' + t.folio }}
+              </span>
+              <span class="band-fecha">{{ fechaHora(t.recibido) }}</span>
+            </div>
+            <div class="band-sub">
+              <span class="folio">{{ t.folio }}</span>
+              <span class="badge info">{{ t.tipo === 'A' ? 'Para atención' : 'Para conocimiento' }}</span>
+              <span class="badge" [class]="clasePrioridad(t.urgente)">{{ t.urgente ? 'Urgente' : 'Ordinario' }}</span>
+              @if (t.cancelado) {
+                <span class="badge">Cancelado</span>
+              } @else if (filtro() === 'pendientes') {
+                @if (plazo(t.diasRestantes); as p) {
+                  <span class="badge" [class]="p.clase">{{ p.texto }}</span>
+                }
+              } @else {
+                <span class="badge baja">{{ t.tipo === 'A' ? 'Atendido' : 'Enterado' }}</span>
+              }
+              <span class="band-quien">De: <b>{{ t.remitente }}</b></span>
+              @if (t.turnadoPor) {
+                <span class="band-quien">· Turnó: <b>{{ t.turnadoPor }}</b></span>
+              }
+            </div>
+            <div class="band-desc">{{ t.asunto }}</div>
+          </div>
+          <span class="estado-lectura" [class.visto]="t.visto" [title]="t.visto ? 'Visto' : 'Sin abrir'">
+            <app-icono [name]="t.visto ? 'doblecheck' : 'check'" />
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="pie-lista">
+      <small>Mostrando {{ desde() }}–{{ hasta() }} de {{ filtrados().length }}</small>
+      @if (totalPaginas() > 1) {
+        <app-paginador [paginaActual]="pagina()" [totalPaginas]="totalPaginas()" (cambiarPagina)="pagina.set($event)" />
+      }
+    </div>
+  }
+
+  @if (abierto(); as t) {
+    <app-vista-rapida
+      [registroId]="t.registroId"
+      modo="entrada"
+      (cerrar)="abierto.set(null)"
+      (documentoAbierto)="marcarVisto(t)"
+    />
+  }
 </section>
