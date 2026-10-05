@@ -1,0 +1,87 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Cumpleaños del mes</h1>
+      <p>Diputados y gabinete que cumplen años este mes y el siguiente.</p>
+    </div>
+    @if (resumen(); as r) {
+      <div class="pagina__acciones">
+        <button type="button" class="btn btn--primary btn--sm" (click)="imprimir('actual')">
+          PDF mes actual ({{ nombreMes(r.actual) }})
+        </button>
+        <button type="button" class="btn btn--outline btn--sm" (click)="imprimir('siguiente')">
+          PDF mes siguiente ({{ nombreMes(r.siguiente) }})
+        </button>
+        <div class="filtros">
+          <select
+            [ngModel]="mesSeleccionado()"
+            (ngModelChange)="mesSeleccionado.set($event)"
+            aria-label="Mes"
+          >
+            @for (m of meses; track m.numero) {
+              <option [ngValue]="m.numero">{{ m.nombre }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            class="btn btn--outline btn--sm"
+            (click)="imprimir(mesSeleccionado())"
+          >
+            PDF mes seleccionado
+          </button>
+        </div>
+      </div>
+    }
+  </header>
+
+  @if (error()) {
+    <div class="tarjeta">
+      <p class="aviso aviso--error">{{ error() }}</p>
+    </div>
+  } @else if (!resumen()) {
+    <div class="tarjeta"><p class="aviso">Cargando cumpleaños…</p></div>
+  } @else if (resumen(); as r) {
+    @for (m of [r.actual, r.siguiente]; track m.mes) {
+      <div class="tarjeta">
+        <h2>Cumpleaños de {{ nombreMes(m) }}</h2>
+        <div class="columnas">
+          <section>
+            <h3>Diputados</h3>
+            @if (m.diputados.length === 0) {
+              <p class="aviso">Sin cumpleaños.</p>
+            } @else {
+              <ul class="lista">
+                @for (d of m.diputados; track $index) {
+                  <li>
+                    <span class="dia">{{ d.dia }}</span>
+                    <span>{{ d.nombre }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+          <section>
+            <h3>Gabinete</h3>
+            @if (m.gabinete.length === 0) {
+              <p class="aviso">Sin cumpleaños.</p>
+            } @else {
+              <ul class="lista">
+                @for (g of m.gabinete; track $index) {
+                  <li>
+                    <span class="dia">{{ g.dia }}</span>
+                    <span>
+                      {{ g.nombre }}
+                      @if (g.cargo) {
+                        <small>{{ g.cargo }}</small>
+                      }
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        </div>
+      </div>
+    }
+  }
+</section>

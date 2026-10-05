@@ -54,6 +54,7 @@ const PRESIDENCIA: NavItem = {
   children: [
     { label: 'Agenda legislativa', route: '/presidencia/agenda' },
     { label: 'Eventos legislativos', route: '/presidencia/eventos' },
+    { label: 'Cumpleaños del mes', route: '/presidencia/cumpleanos' },
   ],
 };
 

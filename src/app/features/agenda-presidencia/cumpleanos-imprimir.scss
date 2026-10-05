@@ -1,0 +1,173 @@
+// Mismo diseño que el PDF de Laravel (cumple_pdf.blade.php): borgoña #7D1535 y dorado #A07830.
+$borgona: #7d1535;
+$dorado: #a07830;
+
+:host {
+  display: block;
+}
+
+.acciones {
+  display: flex;
+  justify-content: space-between;
+}
+
+.hoja {
+  max-width: 216mm;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--brand-border);
+  color: #2c2c2c;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.membrete-encabezado,
+.membrete-pie {
+  display: block;
+  width: 100%;
+}
+
+.contenido {
+  padding: 3mm 18mm 8mm;
+}
+
+.titulo {
+  margin-bottom: 4mm;
+  text-align: center;
+
+  h1 {
+    margin: 0;
+    font-size: 13pt;
+    font-weight: 700;
+    letter-spacing: 1pt;
+    text-transform: uppercase;
+    color: $borgona;
+  }
+}
+
+.linea-dorada {
+  width: 28mm;
+  height: 0.6mm;
+  margin: 1.5mm auto 0;
+  background: $dorado;
+}
+
+.seccion {
+  margin-bottom: 5mm;
+
+  &__titulo {
+    padding: 1.5mm 3.5mm;
+    background: $borgona;
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.4pt;
+    text-transform: uppercase;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead tr {
+    background: #f2e0e5;
+  }
+
+  th {
+    padding: 1.2mm 3mm;
+    border-bottom: 0.3mm solid #c89aaa;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    color: $borgona;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #fbf5f7;
+  }
+
+  td {
+    padding: 1.5mm 3mm;
+    border-bottom: 0.2mm solid #edd8df;
+    vertical-align: middle;
+    font-size: 9pt;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  .col-dia {
+    width: 15mm;
+    text-align: center;
+  }
+
+  .col-cargo {
+    width: 50%;
+  }
+}
+
+.badge-dia {
+  display: inline-block;
+  min-width: 8mm;
+  padding: 0.6mm 2mm;
+  border-radius: 2.5mm;
+  background: $borgona;
+  color: #fff;
+  font-size: 9pt;
+  font-weight: 700;
+  text-align: center;
+}
+
+.nombre {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #1a1a1a;
+}
+
+.cargo {
+  color: #666;
+}
+
+.vacio {
+  padding: 2.5mm 3.5mm;
+  border: 0.2mm solid #edd8df;
+  background: #fafafa;
+  color: #999;
+  font-size: 8.5pt;
+  text-align: center;
+}
+
+.pie {
+  margin: 4mm 0 0;
+  font-size: 7.5pt;
+  text-align: center;
+  color: $dorado;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  .hoja {
+    max-width: none;
+    border: none;
+  }
+
+  // Como en el PDF de Laravel: el pie del membrete se repite fijo al fondo de cada hoja.
+  .contenido {
+    padding-bottom: 30mm;
+  }
+
+  .membrete-pie {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+  }
+}

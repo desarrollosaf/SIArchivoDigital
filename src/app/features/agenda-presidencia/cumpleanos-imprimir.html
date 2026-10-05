@@ -1,0 +1,100 @@
+<section class="pagina">
+  <div class="no-imprimir acciones">
+    <a class="btn btn--outline btn--sm" routerLink="/presidencia/cumpleanos">Regresar</a>
+    <button
+      type="button"
+      class="btn btn--primary btn--sm"
+      [disabled]="!datos()"
+      (click)="imprimir()"
+    >
+      Imprimir / guardar PDF
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="tarjeta">
+      <p class="aviso aviso--error">{{ error() }}</p>
+    </div>
+  } @else if (!datos()) {
+    <div class="tarjeta"><p class="aviso">Generando reporte…</p></div>
+  } @else if (datos(); as d) {
+    <article class="hoja">
+      <img class="membrete-encabezado" src="assets/membrete/encabezado.jpeg" alt="" />
+
+      <div class="contenido">
+        <div class="titulo">
+          <h1>{{ titulo(d) }}</h1>
+          <div class="linea-dorada"></div>
+        </div>
+
+        <section class="seccion">
+          <div class="seccion__titulo">Diputadas, Diputade y Diputados</div>
+          @if (d.diputados.length === 0) {
+            <div class="vacio">No hay diputados con cumpleaños en este período.</div>
+          } @else {
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-dia">Día</th>
+                  <th>Nombre</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of d.diputados; track $index) {
+                  <tr>
+                    <td class="col-dia">
+                      <span class="badge-dia">{{ p.dia }}</span>
+                    </td>
+                    <td class="nombre">{{ p.nombre }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </section>
+
+        @for (
+          grupo of [
+            { titulo: 'Gobierno del Estado de México', filas: gobierno() },
+            { titulo: 'Congreso del Estado de México', filas: congreso() },
+          ];
+          track grupo.titulo
+        ) {
+          @if (grupo.filas.length > 0) {
+            <section class="seccion">
+              <div class="seccion__titulo">{{ grupo.titulo }}</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th class="col-dia">Día</th>
+                    <th>Nombre</th>
+                    <th class="col-cargo">Cargo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (g of grupo.filas; track $index) {
+                    <tr>
+                      <td class="col-dia">
+                        <span class="badge-dia">{{ g.dia }}</span>
+                      </td>
+                      <td class="nombre">{{ g.nombre }}</td>
+                      <td class="cargo">{{ g.cargo }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </section>
+          }
+        }
+
+        @if (d.gabinete.length === 0) {
+          <div class="vacio">No hay miembros del gabinete con cumpleaños en este período.</div>
+        }
+
+        <p class="pie">Generado el {{ generado }}</p>
+      </div>
+
+      <img class="membrete-pie" src="assets/membrete/pie.jpeg" alt="" />
+    </article>
+  }
+</section>

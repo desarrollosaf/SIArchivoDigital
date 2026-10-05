@@ -72,6 +72,20 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'presidencia/cumpleanos',
+        canActivate: [roleGuard(['presidencia', 'administrador'])],
+        loadComponent: () =>
+          import('./features/agenda-presidencia/cumpleanos').then((m) => m.Cumpleanos),
+      },
+      {
+        path: 'presidencia/cumpleanos/imprimir',
+        canActivate: [roleGuard(['presidencia', 'administrador'])],
+        loadComponent: () =>
+          import('./features/agenda-presidencia/cumpleanos-imprimir').then(
+            (m) => m.CumpleanosImprimir,
+          ),
+      },
+      {
         path: 'administracion/clasificacion',
         canActivate: [roleGuard(['administrador'])],
         loadComponent: () =>
