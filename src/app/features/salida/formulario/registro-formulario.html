@@ -40,9 +40,17 @@
   @if (cargando()) {
     <div class="tarjeta"><p class="aviso">Cargando formulario…</p></div>
   } @else {
+    <!-- Mismo orden, etiquetas y campos que el formulario de Laravel (Registro/form.blade.php). -->
     <div class="tarjeta">
-      <h2><span class="numero-paso">1</span>Datos del documento</h2>
+      <h2><span class="numero-paso">1</span>Datos generales del documento</h2>
       <div class="formulario formulario--3">
+        <div class="campo">
+          <label for="f-folio">Folio <span class="obligatorio">*</span></label>
+          <input id="f-folio" type="text" [value]="folio() ?? 'Sin folio'" readonly />
+          @if (!modoEdicion) {
+            <span class="campo__ayuda">Se asigna automáticamente al guardar.</span>
+          }
+        </div>
         <div class="campo">
           <label for="f-recepcion">Fecha de recepción <span class="obligatorio">*</span></label>
           <input
@@ -54,7 +62,7 @@
           />
         </div>
         <div class="campo">
-          <label for="f-documento">Fecha del documento</label>
+          <label for="f-documento">Fecha de documento</label>
           <input
             id="f-documento"
             type="date"
@@ -62,41 +70,149 @@
             (ngModelChange)="fechaDocumento.set($event)"
           />
         </div>
+
         <div class="campo">
-          <label for="f-referencia">Referencia / número de oficio</label>
+          <label for="f-referencia">{{ etiquetaReferencia }}</label>
           <input
             id="f-referencia"
             type="text"
             maxlength="255"
+            placeholder="Referencia"
             [ngModel]="referenciaDocumento()"
             (ngModelChange)="referenciaDocumento.set($event)"
           />
         </div>
         <div class="campo">
-          <label for="f-solicitud">Medio de recepción</label>
+          <label for="f-limite">{{ etiquetaFechaLimite }} <span class="obligatorio">*</span></label>
+          <input
+            id="f-limite"
+            type="date"
+            [min]="fechaRecepcion()"
+            [class.is-invalid]="invalidos().has('fechaLimite')"
+            [ngModel]="fechaLimite()"
+            (ngModelChange)="fechaLimite.set($event); verificarSede()"
+          />
+        </div>
+        <div class="campo">
+          <label for="f-prioridad">Tipo de atención <span class="obligatorio">*</span></label>
           <select
-            id="f-solicitud"
-            [ngModel]="tipoSolicitud()"
-            (ngModelChange)="tipoSolicitud.set($event)"
+            id="f-prioridad"
+            [class.is-invalid]="invalidos().has('tipoAtencion')"
+            [ngModel]="tipoAtencion()"
+            (ngModelChange)="tipoAtencion.set($event)"
           >
-            <option [ngValue]="null">Sin especificar</option>
-            @for (t of tiposSolicitud(); track t.id) {
+            @for (t of tiposAtencion(); track t.id) {
               <option [ngValue]="t.id">{{ t.nombre }}</option>
             }
           </select>
         </div>
+
         <div class="campo">
-          <label for="f-fojas">Fojas</label>
-          <input
-            id="f-fojas"
-            type="number"
-            min="0"
-            [ngModel]="fojas()"
-            (ngModelChange)="fojas.set($event)"
-          />
+          <label for="f-serie">Clasificación <span class="obligatorio">*</span></label>
+          <select
+            id="f-serie"
+            [class.is-invalid]="invalidos().has('serie')"
+            [ngModel]="serieId()"
+            (ngModelChange)="serieId.set($event)"
+          >
+            <option [ngValue]="null" disabled>Seleccione una opción</option>
+            @for (s of series(); track s.id) {
+              <option [ngValue]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
         </div>
-        <div class="campo">
-          <span class="campo__etiqueta">Seguimiento de (folio previo)</span>
+        @if (esPresidencia) {
+          <div class="campo">
+            <label for="f-solicitud">Tipo solicitud <span class="obligatorio">*</span></label>
+            <select
+              id="f-solicitud"
+              [class.is-invalid]="invalidos().has('tipoSolicitud')"
+              [ngModel]="tipoSolicitud()"
+              (ngModelChange)="tipoSolicitud.set($event)"
+            >
+              <option [ngValue]="null" disabled>Seleccione una opción</option>
+              @for (t of tiposSolicitud(); track t.id) {
+                <option [ngValue]="t.id">{{ t.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="f-salon">Sede <span class="obligatorio">*</span></label>
+            <select
+              id="f-salon"
+              [disabled]="!eventoActivo()"
+              [class.is-invalid]="invalidos().has('salon')"
+              [ngModel]="salon()"
+              (ngModelChange)="salon.set($event); verificarSede()"
+            >
+              <option [ngValue]="null">Seleccione una opción</option>
+              @for (s of salones(); track s.id) {
+                <option [ngValue]="s.id">{{ s.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="f-inicio">Hora de inicio <span class="obligatorio">*</span></label>
+            <input
+              id="f-inicio"
+              type="time"
+              [disabled]="!eventoActivo()"
+              [class.is-invalid]="invalidos().has('horaInicio')"
+              [ngModel]="horaInicio()"
+              (ngModelChange)="horaInicio.set($event); verificarSede()"
+            />
+          </div>
+          <div class="campo">
+            <label for="f-termino">Hora de término <span class="obligatorio">*</span></label>
+            <input
+              id="f-termino"
+              type="time"
+              [disabled]="!eventoActivo()"
+              [class.is-invalid]="invalidos().has('horaTermino')"
+              [ngModel]="horaTermino()"
+              (ngModelChange)="horaTermino.set($event); verificarSede()"
+            />
+          </div>
+          <div class="campo">
+            <label for="f-evento">Nombre del evento</label>
+            <input
+              id="f-evento"
+              type="text"
+              [ngModel]="nombreEvento()"
+              (ngModelChange)="nombreEvento.set($event)"
+            />
+          </div>
+        } @else {
+          @if (muestraHoraAtencion()) {
+            <div class="campo">
+              <label for="f-hora">Hora de atención</label>
+              <input
+                id="f-hora"
+                type="time"
+                [ngModel]="horaInicio()"
+                (ngModelChange)="horaInicio.set($event)"
+              />
+            </div>
+          }
+          @if (esRecepcion) {
+            <div class="campo">
+              <label for="f-correspondencia">Tipo de correspondencia</label>
+              <select
+                id="f-correspondencia"
+                [ngModel]="tipoCorrespondencia()"
+                (ngModelChange)="tipoCorrespondencia.set($event)"
+              >
+                <option [ngValue]="null">Seleccione una opción</option>
+                @for (t of tiposCorrespondencia; track t.id) {
+                  <option [ngValue]="t.id">{{ t.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
+        }
+
+        <div class="campo campo--inicio-renglon">
+          <span class="campo__etiqueta">Folio de referencia</span>
           <app-persona-picker
             fuente="rastreables"
             [multiple]="false"
@@ -105,12 +221,20 @@
             (seleccionChange)="rastreo.set($event)"
           />
         </div>
+        <div class="campo">
+          <label for="f-fojas">No. de fojas</label>
+          <input
+            id="f-fojas"
+            type="number"
+            min="0"
+            placeholder="P. ej. 25"
+            [ngModel]="fojas()"
+            (ngModelChange)="fojas.set($event)"
+          />
+        </div>
       </div>
-    </div>
 
-    <div class="tarjeta">
-      <h2><span class="numero-paso">2</span>Remitente y asunto</h2>
-      <div class="formulario">
+      <div class="formulario formulario--remitente">
         <div class="campo">
           <span class="campo__etiqueta">Remitente <span class="obligatorio">*</span></span>
           <app-persona-picker
@@ -123,7 +247,70 @@
             (seleccionChange)="remitente.set($event)"
           />
         </div>
-        @if (esRecepcion) {
+        <div class="campo">
+          <label for="f-otro"
+            >Especifique
+            @if (esExterno()) {
+              <span class="obligatorio">*</span>
+            }
+          </label>
+          <input
+            id="f-otro"
+            type="text"
+            maxlength="255"
+            placeholder="P. ej. Juan José Pérez Juárez"
+            [disabled]="!esExterno()"
+            [class.is-invalid]="invalidos().has('otroRemitente')"
+            [ngModel]="otroRemitente()"
+            (ngModelChange)="otroRemitente.set($event)"
+          />
+        </div>
+      </div>
+
+      <div class="formulario formulario--1">
+        <div class="campo">
+          <label for="f-indicaciones">Indicación <span class="obligatorio">*</span></label>
+          <input
+            id="f-indicaciones"
+            type="text"
+            maxlength="350"
+            placeholder="P. ej. Solicitud de material"
+            [class.is-invalid]="invalidos().has('indicaciones')"
+            [ngModel]="indicaciones()"
+            (ngModelChange)="indicaciones.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <label for="f-asunto">Descripción <span class="obligatorio">*</span></label>
+          <textarea
+            id="f-asunto"
+            rows="5"
+            [class.is-invalid]="invalidos().has('asunto')"
+            [ngModel]="asunto()"
+            (ngModelChange)="asunto.set($event)"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2><span class="numero-paso">2</span>Adjuntar archivo</h2>
+      @if (modoEdicion && tieneArchivoActual()) {
+        <p class="aviso">Ya hay un documento cargado. Si eliges otro, lo reemplazará.</p>
+      }
+      <app-file-upload
+        variant="list"
+        [multiple]="false"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+        [files]="archivos()"
+        (filesChange)="onArchivos($event)"
+      />
+    </div>
+
+    <div class="tarjeta">
+      <h2><span class="numero-paso">3</span>Selección de destinatarios</h2>
+      @if (esRecepcion) {
+        <div class="formulario formulario--remitente">
           <div class="campo">
             <span class="campo__etiqueta">Dirigido a <span class="obligatorio">*</span></span>
             <app-persona-picker
@@ -136,174 +323,29 @@
               (seleccionChange)="dirigidoA.set($event)"
             />
           </div>
-          @if (dirigidoEsOtro()) {
-            <div class="campo">
-              <label for="f-dirigido-otro"
-                >Especifique a quién <span class="obligatorio">*</span></label
-              >
-              <input
-                id="f-dirigido-otro"
-                type="text"
-                maxlength="255"
-                placeholder="P. ej. Juan Pérez Ruíz, Director de…"
-                [class.is-invalid]="invalidos().has('dirigidoOtro')"
-                [ngModel]="dirigidoOtroNombre()"
-                (ngModelChange)="dirigidoOtroNombre.set($event)"
-              />
-            </div>
-          }
           <div class="campo">
-            <label for="f-correspondencia">Tipo de correspondencia</label>
-            <select
-              id="f-correspondencia"
-              [ngModel]="tipoCorrespondencia()"
-              (ngModelChange)="tipoCorrespondencia.set($event)"
-            >
-              <option [ngValue]="null">Sin especificar</option>
-              @for (t of tiposCorrespondencia; track t.id) {
-                <option [ngValue]="t.id">{{ t.nombre }}</option>
+            <label for="f-dirigido-otro"
+              >Especifique
+              @if (dirigidoEsOtro()) {
+                <span class="obligatorio">*</span>
               }
-            </select>
-          </div>
-        }
-        @if (esExterno()) {
-          <div class="campo">
-            <label for="f-otro"
-              >Nombre del remitente externo <span class="obligatorio">*</span></label
-            >
+            </label>
             <input
-              id="f-otro"
+              id="f-dirigido-otro"
               type="text"
               maxlength="255"
-              [class.is-invalid]="invalidos().has('otroRemitente')"
-              [ngModel]="otroRemitente()"
-              (ngModelChange)="otroRemitente.set($event)"
+              placeholder="P. ej. Juan Pérez Ruíz"
+              [disabled]="!dirigidoEsOtro()"
+              [class.is-invalid]="invalidos().has('dirigidoOtro')"
+              [ngModel]="dirigidoOtroNombre()"
+              (ngModelChange)="dirigidoOtroNombre.set($event)"
             />
           </div>
-        }
-        <div class="campo campo--completo">
-          <label for="f-asunto">Asunto <span class="obligatorio">*</span></label>
-          <textarea
-            id="f-asunto"
-            rows="3"
-            [class.is-invalid]="invalidos().has('asunto')"
-            [ngModel]="asunto()"
-            (ngModelChange)="asunto.set($event)"
-          ></textarea>
         </div>
-        <div class="campo campo--completo">
-          <label for="f-indicaciones"
-            >Indicaciones para quien atiende <span class="obligatorio">*</span></label
-          >
-          <textarea
-            id="f-indicaciones"
-            rows="2"
-            [class.is-invalid]="invalidos().has('indicaciones')"
-            [ngModel]="indicaciones()"
-            (ngModelChange)="indicaciones.set($event)"
-          ></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="tarjeta">
-      <h2><span class="numero-paso">3</span>Clasificación y plazo</h2>
-      <div class="formulario formulario--3">
-        <div class="campo">
-          <label for="f-serie">Serie <span class="obligatorio">*</span></label>
-          <select
-            id="f-serie"
-            [class.is-invalid]="invalidos().has('serie')"
-            [ngModel]="serieId()"
-            (ngModelChange)="serieId.set($event)"
-          >
-            <option [ngValue]="null" disabled>Selecciona la serie</option>
-            @for (s of series(); track s.id) {
-              <option [ngValue]="s.id">{{ s.nombre }}</option>
-            }
-          </select>
-        </div>
-        <div class="campo">
-          <label for="f-prioridad">Prioridad <span class="obligatorio">*</span></label>
-          <select
-            id="f-prioridad"
-            [class.is-invalid]="invalidos().has('tipoAtencion')"
-            [ngModel]="tipoAtencion()"
-            (ngModelChange)="tipoAtencion.set($event)"
-          >
-            @for (t of tiposAtencion(); track t.id) {
-              <option [ngValue]="t.id">{{ t.nombre }}</option>
-            }
-          </select>
-        </div>
-        <div class="campo">
-          <label for="f-limite">Fecha límite de atención <span class="obligatorio">*</span></label>
-          <input
-            id="f-limite"
-            type="date"
-            [min]="fechaRecepcion()"
-            [class.is-invalid]="invalidos().has('fechaLimite')"
-            [ngModel]="fechaLimite()"
-            (ngModelChange)="fechaLimite.set($event)"
-          />
-        </div>
-        @if (pideHorario()) {
-          <div class="campo">
-            <label for="f-inicio">Hora de inicio</label>
-            <input
-              id="f-inicio"
-              type="time"
-              [ngModel]="horaInicio()"
-              (ngModelChange)="horaInicio.set($event)"
-            />
-          </div>
-          <div class="campo">
-            <label for="f-termino">Hora de término</label>
-            <input
-              id="f-termino"
-              type="time"
-              [ngModel]="horaTermino()"
-              (ngModelChange)="horaTermino.set($event)"
-            />
-          </div>
-          <div class="campo">
-            <label for="f-salon">Sede</label>
-            <select id="f-salon" [ngModel]="salon()" (ngModelChange)="salon.set($event)">
-              <option [ngValue]="null">Sin sede</option>
-              @for (s of salones(); track s.id) {
-                <option [ngValue]="s.id">{{ s.nombre }}</option>
-              }
-            </select>
-          </div>
-          <div class="campo campo--completo">
-            <label for="f-evento">Nombre del evento</label>
-            <input
-              id="f-evento"
-              type="text"
-              [ngModel]="nombreEvento()"
-              (ngModelChange)="nombreEvento.set($event)"
-            />
-          </div>
-        } @else {
-          <!-- Como en Laravel: las series sin horario de evento solo piden la hora de atención. -->
-          <div class="campo">
-            <label for="f-hora">Hora de atención</label>
-            <input
-              id="f-hora"
-              type="time"
-              [ngModel]="horaInicio()"
-              (ngModelChange)="horaInicio.set($event)"
-            />
-          </div>
-        }
-      </div>
-    </div>
-
-    <div class="tarjeta">
-      <h2><span class="numero-paso">4</span>Turnar a</h2>
+      }
       <div class="formulario">
         <div class="campo">
-          <span class="campo__etiqueta">Para su atención</span>
+          <span class="campo__etiqueta">Para atención <span class="obligatorio">*</span></span>
           <app-persona-picker
             [invalid]="invalidos().has('destinatarios')"
             [seleccion]="atencion()"
@@ -314,7 +356,7 @@
           >
         </div>
         <div class="campo">
-          <span class="campo__etiqueta">Para su conocimiento</span>
+          <span class="campo__etiqueta">Para conocimiento</span>
           <app-persona-picker
             [invalid]="invalidos().has('destinatarios')"
             [seleccion]="conocimiento()"
@@ -323,20 +365,6 @@
           <span class="campo__ayuda">Solo se les informa. También puedes elegir grupos.</span>
         </div>
       </div>
-    </div>
-
-    <div class="tarjeta">
-      <h2><span class="numero-paso">5</span>Documento escaneado</h2>
-      @if (modoEdicion && tieneArchivoActual()) {
-        <p class="aviso">Ya hay un documento cargado. Si eliges otro, lo reemplazará.</p>
-      }
-      <app-file-upload
-        variant="list"
-        [multiple]="false"
-        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-        [files]="archivos()"
-        (filesChange)="onArchivos($event)"
-      />
     </div>
 
     <div class="acciones-formulario">

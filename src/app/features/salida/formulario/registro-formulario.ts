@@ -12,6 +12,7 @@ import {
 import { RegistroPayload, RegistrosService } from '../../../core/services/registros.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { EventosLegislativosService } from '../../../core/services/agenda-presidencia.service';
 import { FileUpload } from '../../../shared/file-upload/file-upload';
 import { PersonaPicker } from '../../../shared/persona-picker/persona-picker';
 import { fechaHoyMexico } from '../../../shared/utils/fecha-mexico';
@@ -19,6 +20,9 @@ import { fechaHoyMexico } from '../../../shared/utils/fecha-mexico';
 const REMITENTE_EXTERNO: Persona = { id: '999', nombre: 'Remitente externo (otra institución)' };
 /** "Dirigido a" otra persona: su nombre se escribe en "Especifique" (como en Laravel). */
 const DIRIGIDO_OTRO: Persona = { id: '99999', nombre: 'Otra persona (especificar)' };
+
+/** Sede "Evento foráneo": no se revisa si está ocupada (igual que Laravel). */
+const SEDE_FORANEA = 11;
 
 export const TIPOS_CORRESPONDENCIA = [
   { id: 1, nombre: 'Confidencial' },
@@ -46,6 +50,14 @@ export class RegistroFormulario {
   protected readonly tiposCorrespondencia = TIPOS_CORRESPONDENCIA;
   /** Recepción de Presidencia captura además tipo de correspondencia y "Dirigido a". */
   protected readonly esRecepcion: boolean;
+  /**
+   * Presidencia captura tipo de solicitud, sede, horario y nombre del evento (en Laravel, fijo
+   * para sus RFC); los demás solo la hora de atención.
+   */
+  protected readonly esPresidencia: boolean;
+  /** Etiquetas que Laravel cambiaba para Presidencia y Recepción. */
+  protected readonly etiquetaReferencia: string;
+  protected readonly etiquetaFechaLimite: string;
 
   protected readonly cargando = signal(true);
   protected readonly enviando = signal(false);
@@ -88,6 +100,12 @@ export class RegistroFormulario {
   protected readonly pideHorario = computed(
     () => this.series().find((s) => s.id === this.serieId())?.horarios ?? false,
   );
+  /** Presidencia: sede y horario se habilitan con las series de eventos. */
+  protected readonly eventoActivo = computed(() => this.esPresidencia && this.pideHorario());
+  /** Los demás: "Hora de atención" se ve mientras no hay serie o si la serie lleva horario. */
+  protected readonly muestraHoraAtencion = computed(
+    () => !this.esPresidencia && (!this.serieId() || this.pideHorario()),
+  );
 
   protected readonly invalidos = computed(() => {
     if (!this.intentoGuardar()) return new Set<string>();
@@ -104,6 +122,12 @@ export class RegistroFormulario {
     if (!this.asunto().trim()) faltan.add('asunto');
     if (!this.indicaciones().trim()) faltan.add('indicaciones');
     if (this.atencion().length + this.conocimiento().length === 0) faltan.add('destinatarios');
+    if (this.esPresidencia && !this.tipoSolicitud()) faltan.add('tipoSolicitud');
+    if (this.eventoActivo()) {
+      if (!this.salon()) faltan.add('salon');
+      if (!this.horaInicio()) faltan.add('horaInicio');
+      if (!this.horaTermino() || this.horaTermino() <= this.horaInicio()) faltan.add('horaTermino');
+    }
     if (this.esRecepcion) {
       if (this.dirigidoA().length === 0) faltan.add('dirigidoA');
       if (this.dirigidoEsOtro() && !this.dirigidoOtroNombre().trim()) faltan.add('dirigidoOtro');
@@ -116,10 +140,18 @@ export class RegistroFormulario {
     private readonly registrosService: RegistrosService,
     private readonly toastService: ToastService,
     private readonly router: Router,
+    private readonly eventosService: EventosLegislativosService,
     route: ActivatedRoute,
     authService: AuthService,
   ) {
-    this.esRecepcion = authService.currentUser()?.rol === 'recepcion';
+    const rol = authService.currentUser()?.rol;
+    this.esRecepcion = rol === 'recepcion';
+    this.esPresidencia = rol === 'presidencia';
+    this.etiquetaReferencia = this.esPresidencia
+      ? 'Número de oficio entrante'
+      : 'Referencia del documento';
+    this.etiquetaFechaLimite =
+      this.esPresidencia || this.esRecepcion ? 'Fecha de atención' : 'Fecha límite de atención';
     const idParam = route.snapshot.paramMap.get('id');
     this.idRegistro = idParam ? Number(idParam) : null;
     this.modoEdicion = this.idRegistro !== null;
@@ -138,9 +170,12 @@ export class RegistroFormulario {
       fechaDocumento: this.fechaDocumento() || undefined,
       referenciaDocumento: this.referenciaDocumento().trim() || undefined,
       fechaLimiteAtencion: this.fechaLimite(),
-      // Hora de inicio del evento, o la hora de atención en las demás series (hora_atencion).
-      horaInicio: this.horaInicio() || undefined,
-      horaTermino: this.pideHorario() ? this.horaTermino() || undefined : undefined,
+      // Hora de inicio del evento (Presidencia) o la hora de atención; ambas van a hora_atencion.
+      horaInicio:
+        this.eventoActivo() || this.muestraHoraAtencion()
+          ? this.horaInicio() || undefined
+          : undefined,
+      horaTermino: this.eventoActivo() ? this.horaTermino() || undefined : undefined,
       tipoAtencion: this.tipoAtencion()!,
       serieId: this.serieId()!,
       tituloDoc: this.indicaciones().trim(),
@@ -149,8 +184,9 @@ export class RegistroFormulario {
       otroRemitente: this.esExterno() ? this.otroRemitente().trim() : undefined,
       fojas: this.fojas() ?? undefined,
       tipoSolicitud: this.tipoSolicitud() ?? undefined,
-      salon: this.pideHorario() ? (this.salon() ?? undefined) : undefined,
-      nombreEvento: this.pideHorario() ? this.nombreEvento().trim() || undefined : undefined,
+      salon: this.eventoActivo() ? (this.salon() ?? undefined) : undefined,
+      // Solo los captura Presidencia; a los demás se les reenvía lo que ya tenía el registro.
+      nombreEvento: this.nombreEvento().trim() || undefined,
       folioRastreo: this.rastreo()[0] ? Number(this.rastreo()[0].id) : undefined,
       tipoCorrespondencia: this.esRecepcion ? (this.tipoCorrespondencia() ?? undefined) : undefined,
       destinatario: this.esRecepcion ? this.dirigidoA()[0]?.id : undefined,
@@ -173,6 +209,34 @@ export class RegistroFormulario {
         error: (err: HttpErrorResponse) => this.alFallar(err),
       });
     }
+  }
+
+  /**
+   * Presidencia: avisa si la sede ya está ocupada en ese horario y la deja vacía, como Laravel
+   * (no aplica a "Evento foráneo"). Al editar no se revisa: el propio registro ocuparía la sede.
+   */
+  verificarSede(): void {
+    const sede = this.salon();
+    if (
+      this.modoEdicion ||
+      !this.eventoActivo() ||
+      !sede ||
+      sede === SEDE_FORANEA ||
+      !this.fechaLimite() ||
+      !this.horaInicio() ||
+      !this.horaTermino() ||
+      this.horaTermino() <= this.horaInicio()
+    ) {
+      return;
+    }
+    this.eventosService
+      .disponibilidad(this.fechaLimite(), this.horaInicio(), this.horaTermino(), sede, null)
+      .subscribe((d) => {
+        if (d.disponible) return;
+        const choque = d.conflictos.map((c) => `${c.horario} ${c.descripcion}`.trim()).join(' · ');
+        this.salon.set(null);
+        this.toastService.error(`La sede no está disponible en ese horario: ${choque}`);
+      });
   }
 
   onArchivos(files: File[]): void {
