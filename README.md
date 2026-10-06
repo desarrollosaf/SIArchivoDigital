@@ -151,6 +151,12 @@ MariaDB queda en `127.0.0.1:3398` (root / `archivo_local`). Para empezar de cero
 `BASE_HREF=/Documentacion26/`, y el backend en Node 24. Después, una vez por despliegue:
 `docker compose -f docker-compose.prod.yml exec backend npm run migrate`.
 
+**Archivos.** `backend/uploads` es el `storage/app` de Laravel (se monta tal cual): los documentos
+quedan en `registros/`, `Conclusion/` y `comentarios/`, y las fotos (gabinete y perfil) en
+`public/images/gabinete/` y `public/fotos/`. Las rutas de la base no cambian y lo nuevo se guarda
+en las mismas carpetas, así que Laravel y este sistema ven los mismos archivos. Para revisar que
+todo abra: `docker compose -f docker-compose.prod.yml exec backend npm run verificar-archivos`.
+
 El frontend llama a la API en `/Documentacion26/backend`, así que el proxy inverso del servidor
 debe enviar `/Documentacion26/backend/` al backend (puerto 3040) y `/Documentacion26/` al
 frontend (puerto 8078), en ambos casos quitando el prefijo.

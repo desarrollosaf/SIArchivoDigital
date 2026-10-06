@@ -65,14 +65,14 @@ export class GabineteService {
 
   async enviarFoto(id: number, res: Response) {
     const g = await this.buscar(id);
-    this.archivos.enviar(res, g.path);
+    this.archivos.enviar(res, g.path, undefined, 'publico');
   }
 
   private guardarFoto(foto: Express.Multer.File) {
     if (!EXTENSIONES_FOTO.includes(extname(foto.originalname).toLowerCase())) {
       throw new BadRequestException('La foto debe ser JPG, PNG o WEBP.');
     }
-    return this.archivos.guardar(foto, CARPETA_FOTOS);
+    return this.archivos.guardar(foto, CARPETA_FOTOS, 'publico');
   }
 
   private async buscar(id: number) {

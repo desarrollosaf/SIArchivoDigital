@@ -49,13 +49,14 @@ export class PerfilService {
     return this.datos(usuario);
   }
 
-  /** Se guarda como "fotos/RFC.png", la misma ruta que dejaba Laravel. */
+  /** Se guarda como "fotos/RFC.png" en storage/app/public, igual que Laravel. */
   async actualizarFoto(usuario: UsuarioActual, foto: Express.Multer.File) {
     const u = await this.cuenta(usuario);
     const ruta = await this.archivos.guardarEn(
       foto,
       `fotos/${u.rfc}.png`,
       EXTENSIONES_FOTO,
+      'publico',
     );
     await u.update({ path_foto: ruta });
     return this.datos(usuario);
@@ -63,7 +64,7 @@ export class PerfilService {
 
   async enviarFoto(usuario: UsuarioActual, res: Response) {
     const u = await this.cuenta(usuario);
-    this.archivos.enviar(res, u.path_foto);
+    this.archivos.enviar(res, u.path_foto, undefined, 'publico');
   }
 
   /** Mismas reglas que Laravel: la actual debe coincidir y la nueva ser robusta. */

@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
-import { dirname, extname, join, normalize, resolve, sep } from 'path';
+import { dirname, extname, normalize, resolve, sep } from 'path';
 import type { Response } from 'express';
 
 export const MAX_ARCHIVO_BYTES = 20 * 1024 * 1024;
@@ -38,22 +38,36 @@ export function tieneArchivo(ruta: string | null | undefined): ruta is string {
 }
 
 /**
- * Guarda y entrega los documentos del sistema. Las rutas en la base son relativas a la carpeta de
- * documentos (p. ej. "registros/abc.pdf"), igual que las dejaba Laravel en storage/app, así que
- * basta copiar esa carpeta para que el histórico siga abriendo. Los archivos nunca se exponen como
- * estáticos: se entregan por endpoints que antes validan que el usuario tenga acceso.
+ * Dónde vive un archivo, con la misma estructura que el storage de Laravel:
+ * - "documentos": storage/app (registros/, comentarios/, Conclusion/…), lo que Laravel leía con
+ *   Storage::get().
+ * - "publico": storage/app/public (images/gabinete/, fotos/…), lo que Laravel mostraba con
+ *   asset('storage/…').
+ */
+export type ZonaArchivos = 'documentos' | 'publico';
+
+/**
+ * Guarda y entrega los documentos del sistema. Las rutas en la base son relativas a la zona
+ * (p. ej. "registros/abc.pdf"), igual que las dejaba Laravel, así que con montar el storage de
+ * Laravel el histórico abre tal cual, y lo nuevo se guarda junto (Laravel también lo puede abrir).
+ * Los archivos nunca se exponen como estáticos: se entregan por endpoints que antes validan que el
+ * usuario tenga acceso.
  */
 @Injectable()
 export class ArchivosService {
-  private readonly raiz: string;
+  private readonly raices: Record<ZonaArchivos, string>;
 
   constructor(config: ConfigService) {
-    this.raiz = resolve(config.get<string>('storage.uploadsDir')!);
+    this.raices = {
+      documentos: resolve(config.get<string>('storage.uploadsDir')!),
+      publico: resolve(config.get<string>('storage.publicDir')!),
+    };
   }
 
   async guardar(
     archivo: Express.Multer.File,
     carpeta: string,
+    zona: ZonaArchivos = 'documentos',
   ): Promise<string> {
     const extension = extname(archivo.originalname).toLowerCase();
     if (!EXTENSIONES_PERMITIDAS.has(extension)) {
@@ -62,8 +76,8 @@ export class ArchivosService {
       );
     }
     const relativa = `${carpeta}/${randomUUID()}${extension}`;
-    const destino = this.rutaAbsoluta(relativa);
-    await mkdir(join(this.raiz, carpeta), { recursive: true });
+    const destino = this.rutaAbsoluta(relativa, zona);
+    await mkdir(dirname(destino), { recursive: true });
     await writeFile(destino, archivo.buffer);
     return relativa;
   }
@@ -76,6 +90,7 @@ export class ArchivosService {
     archivo: Express.Multer.File,
     relativa: string,
     extensiones: string[],
+    zona: ZonaArchivos = 'documentos',
   ): Promise<string> {
     const extension = extname(archivo.originalname).toLowerCase();
     if (!extensiones.includes(extension)) {
@@ -83,7 +98,7 @@ export class ArchivosService {
         `Solo se permiten archivos ${extensiones.join(', ')}`,
       );
     }
-    const destino = this.rutaAbsoluta(relativa);
+    const destino = this.rutaAbsoluta(relativa, zona);
     await mkdir(dirname(destino), { recursive: true });
     await writeFile(destino, archivo.buffer);
     return relativa;
@@ -93,12 +108,22 @@ export class ArchivosService {
     res: Response,
     relativa: string | null | undefined,
     nombreDescarga?: string,
+    zona: ZonaArchivos = 'documentos',
   ): void {
     if (!tieneArchivo(relativa)) {
       throw new NotFoundException('El registro no tiene archivo adjunto');
     }
-    const absoluta = this.rutaAbsoluta(relativa);
-    if (!existsSync(absoluta)) {
+    // Las fotos se buscan primero en storage/app/public (Laravel) y luego en la raíz, por si se
+    // copiaron ahí en lugar de montar el storage completo.
+    const candidatas =
+      zona === 'publico'
+        ? [
+            this.rutaAbsoluta(relativa, 'publico'),
+            this.rutaAbsoluta(relativa, 'documentos'),
+          ]
+        : [this.rutaAbsoluta(relativa, 'documentos')];
+    const absoluta = candidatas.find((c) => existsSync(c));
+    if (!absoluta) {
       throw new NotFoundException('No se encontró el archivo en el servidor');
     }
     const nombre = nombreDescarga ?? absoluta.split(sep).pop()!;
@@ -109,10 +134,11 @@ export class ArchivosService {
     res.sendFile(absoluta);
   }
 
-  /** Resuelve la ruta dentro de la carpeta de documentos; rechaza cualquier intento de salirse. */
-  private rutaAbsoluta(relativa: string): string {
-    const absoluta = resolve(this.raiz, normalize(relativa));
-    if (absoluta !== this.raiz && !absoluta.startsWith(this.raiz + sep)) {
+  /** Resuelve la ruta dentro de la zona; rechaza cualquier intento de salirse. */
+  private rutaAbsoluta(relativa: string, zona: ZonaArchivos): string {
+    const raiz = this.raices[zona];
+    const absoluta = resolve(raiz, normalize(relativa));
+    if (absoluta !== raiz && !absoluta.startsWith(raiz + sep)) {
       throw new BadRequestException('Ruta de archivo inválida');
     }
     return absoluta;

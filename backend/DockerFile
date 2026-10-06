@@ -31,6 +31,9 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/database ./src/database
 COPY --from=build /app/.sequelizerc ./.sequelizerc
 
+# Revisión de que los archivos de la base existan en uploads (npm run verificar-archivos).
+COPY --from=build /app/scripts/verificar-archivos.js ./scripts/verificar-archivos.js
+
 # Membrete del PDF de cumpleaños que se envía por WhatsApp.
 COPY --from=build /app/assets ./assets
 

@@ -152,7 +152,9 @@ export class CumpleanosService {
     }>(
       'SELECT nombre, cargo, DAY(fecha_nacimiento) AS dia, tipo FROM pumpes_gabinetes ' +
         'WHERE deleted_at IS NULL AND MONTH(fecha_nacimiento) = :mes' +
-        (excluirCargos ? ' AND (cargo IS NULL OR cargo NOT IN (:excluidos))' : '') +
+        (excluirCargos
+          ? ' AND (cargo IS NULL OR cargo NOT IN (:excluidos))'
+          : '') +
         ' ORDER BY DAY(fecha_nacimiento), nombre',
       {
         type: QueryTypes.SELECT,
