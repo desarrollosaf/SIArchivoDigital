@@ -69,6 +69,14 @@ export function columnasRegistro(): ColDef<RegistroListado>[] {
       wrapText: true,
       autoHeight: true,
       cellClass: 'celda-larga',
+      // Como la bandeja de salida de Laravel: lo que captura Recepción de Presidencia.
+      cellRenderer: (p: ICellRendererParams<RegistroListado>) =>
+        p.data
+          ? escaparHtml(p.data.remitente) +
+            (p.data.dirigidoA
+              ? `<br><small class="dirigido">Dirigido a: ${escaparHtml(p.data.dirigidoA)}</small>`
+              : '')
+          : '',
     },
     {
       colId: 'turnos',

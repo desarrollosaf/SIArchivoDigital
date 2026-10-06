@@ -11,11 +11,19 @@ import {
 } from '../../../core/services/catalogos.service';
 import { RegistroPayload, RegistrosService } from '../../../core/services/registros.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { FileUpload } from '../../../shared/file-upload/file-upload';
 import { PersonaPicker } from '../../../shared/persona-picker/persona-picker';
 import { fechaHoyMexico } from '../../../shared/utils/fecha-mexico';
 
 const REMITENTE_EXTERNO: Persona = { id: '999', nombre: 'Remitente externo (otra institución)' };
+/** "Dirigido a" otra persona: su nombre se escribe en "Especifique" (como en Laravel). */
+const DIRIGIDO_OTRO: Persona = { id: '99999', nombre: 'Otra persona (especificar)' };
+
+export const TIPOS_CORRESPONDENCIA = [
+  { id: 1, nombre: 'Confidencial' },
+  { id: 2, nombre: 'Ordinaria' },
+];
 
 function mensajeError(err: HttpErrorResponse, porDefecto: string): string {
   const mensaje = (err.error as { message?: string | string[] } | null)?.message;
@@ -34,6 +42,10 @@ export class RegistroFormulario {
   protected readonly idRegistro: number | null;
   protected readonly modoEdicion: boolean;
   protected readonly remitenteExterno = [REMITENTE_EXTERNO];
+  protected readonly dirigidoOtro = [DIRIGIDO_OTRO];
+  protected readonly tiposCorrespondencia = TIPOS_CORRESPONDENCIA;
+  /** Recepción de Presidencia captura además tipo de correspondencia y "Dirigido a". */
+  protected readonly esRecepcion: boolean;
 
   protected readonly cargando = signal(true);
   protected readonly enviando = signal(false);
@@ -66,6 +78,10 @@ export class RegistroFormulario {
   protected readonly atencion = signal<Persona[]>([]);
   protected readonly conocimiento = signal<Persona[]>([]);
   protected readonly archivos = signal<File[]>([]);
+  protected readonly tipoCorrespondencia = signal<number | null>(null);
+  protected readonly dirigidoA = signal<Persona[]>([]);
+  protected readonly dirigidoOtroNombre = signal('');
+  protected readonly dirigidoEsOtro = computed(() => this.dirigidoA()[0]?.id === DIRIGIDO_OTRO.id);
   protected readonly tieneArchivoActual = signal(false);
 
   protected readonly esExterno = computed(() => this.remitente()[0]?.id === REMITENTE_EXTERNO.id);
@@ -88,6 +104,10 @@ export class RegistroFormulario {
     if (!this.asunto().trim()) faltan.add('asunto');
     if (!this.indicaciones().trim()) faltan.add('indicaciones');
     if (this.atencion().length + this.conocimiento().length === 0) faltan.add('destinatarios');
+    if (this.esRecepcion) {
+      if (this.dirigidoA().length === 0) faltan.add('dirigidoA');
+      if (this.dirigidoEsOtro() && !this.dirigidoOtroNombre().trim()) faltan.add('dirigidoOtro');
+    }
     return faltan;
   });
 
@@ -97,7 +117,9 @@ export class RegistroFormulario {
     private readonly toastService: ToastService,
     private readonly router: Router,
     route: ActivatedRoute,
+    authService: AuthService,
   ) {
+    this.esRecepcion = authService.currentUser()?.rol === 'recepcion';
     const idParam = route.snapshot.paramMap.get('id');
     this.idRegistro = idParam ? Number(idParam) : null;
     this.modoEdicion = this.idRegistro !== null;
@@ -130,6 +152,10 @@ export class RegistroFormulario {
       salon: this.pideHorario() ? (this.salon() ?? undefined) : undefined,
       nombreEvento: this.pideHorario() ? this.nombreEvento().trim() || undefined : undefined,
       folioRastreo: this.rastreo()[0] ? Number(this.rastreo()[0].id) : undefined,
+      tipoCorrespondencia: this.esRecepcion ? (this.tipoCorrespondencia() ?? undefined) : undefined,
+      destinatario: this.esRecepcion ? this.dirigidoA()[0]?.id : undefined,
+      destinatarioOtro:
+        this.esRecepcion && this.dirigidoEsOtro() ? this.dirigidoOtroNombre().trim() : undefined,
       atencion: this.atencion().map((p) => p.id),
       conocimiento: this.conocimiento().map((p) => p.id),
     };
@@ -230,6 +256,15 @@ export class RegistroFormulario {
         this.atencion.set(r.destinatariosRegistro.atencion);
         this.conocimiento.set(r.destinatariosRegistro.conocimiento);
         this.tieneArchivoActual.set(r.tieneArchivo);
+        this.tipoCorrespondencia.set(r.tipoCorrespondencia?.id ?? null);
+        this.dirigidoA.set(
+          !r.destinatario
+            ? []
+            : r.destinatario === DIRIGIDO_OTRO.id
+              ? [DIRIGIDO_OTRO]
+              : [{ id: r.destinatario, nombre: r.dirigidoA ?? r.destinatario }],
+        );
+        this.dirigidoOtroNombre.set(r.destinatarioOtro ?? '');
         this.cargando.set(false);
         if (!r.permisos.editar) {
           this.toastService.info('Este registro ya no se puede editar.');

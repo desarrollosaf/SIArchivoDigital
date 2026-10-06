@@ -18,7 +18,11 @@ import { AccesoService } from '../common/acceso.service';
 import { DestinatariosService } from '../common/destinatarios.service';
 import { AgendaSyncService } from '../common/agenda-sync.service';
 import { EstatusRegistroService } from '../common/estatus-registro.service';
-import { esAdministrador, UsuarioActual } from '../common/usuario-actual';
+import {
+  esAdministrador,
+  ROL_RECEPCION,
+  UsuarioActual,
+} from '../common/usuario-actual';
 import { anioActualMexico, fechaHoyMexico } from '../common/fecha-mexico.util';
 import { rangoFecha } from '../common/rango-fecha.util';
 import { CatalogosService } from '../catalogos/catalogos.service';
@@ -35,6 +39,12 @@ export type FiltroEstatus =
   'pendientes' | 'concluidos' | 'cancelados' | 'todos';
 
 const CARPETA_REGISTROS = 'registros';
+/** "Dirigido a: otro": el nombre se captura en destinatario_otro (como en Laravel). */
+const DESTINATARIO_OTRO = '99999';
+const TIPOS_CORRESPONDENCIA: Record<number, string> = {
+  1: 'Confidencial',
+  2: 'Ordinaria',
+};
 
 function horaCompleta(valor: string | undefined): string | null {
   if (!valor) return null;
@@ -230,6 +240,7 @@ export class RegistrosService {
 
     const rfcs = [
       registro.remitenteRfc,
+      registro.destinatario ?? '',
       ...turnos.flatMap((t) => [t.userRfc, t.userTurna ?? '']),
       ...comentarios.flatMap((c) => [
         c.userRfc,
@@ -290,6 +301,17 @@ export class RegistrosService {
       tipoSolicitud: registro.tipoSolicitud,
       salon: registro.salon,
       nombreEvento: registro.nombreEvento,
+      // Recepción de Presidencia
+      dirigidoA: dirigidoA(registro, nombres),
+      destinatario: registro.destinatario,
+      destinatarioOtro: registro.destinatarioOtro,
+      tipoCorrespondencia: registro.tipoCorrespondencia
+        ? {
+            id: Number(registro.tipoCorrespondencia),
+            nombre:
+              TIPOS_CORRESPONDENCIA[Number(registro.tipoCorrespondencia)] ?? '',
+          }
+        : null,
       registradoPor: registradoPor.get(Number(registro.userRegistro)) ?? null,
       creado: registro.createdAt,
       estatus: estatusRegistro(registro),
@@ -364,6 +386,7 @@ export class RegistrosService {
     usuario: UsuarioActual,
   ) {
     this.validarRemitente(dto);
+    this.validarRecepcion(dto, usuario);
     const perfil = await this.padron.perfil(usuario.rfc);
     if (!perfil?.idDepartamento) {
       throw new BadRequestException(
@@ -394,6 +417,7 @@ export class RegistrosService {
         const nuevo = await this.registroModel.create(
           {
             ...this.camposRegistro(dto),
+            ...this.camposRecepcion(dto, usuario),
             folio,
             path,
             userRegistro: usuario.sub,
@@ -419,6 +443,7 @@ export class RegistrosService {
     usuario: UsuarioActual,
   ) {
     this.validarRemitente(dto);
+    this.validarRecepcion(dto, usuario);
     await this.acceso.exigirEscritura(usuario);
     const registro = await this.acceso.registroPropio(id, usuario);
     if (!registro.activo) {
@@ -434,7 +459,11 @@ export class RegistrosService {
 
     await this.registroModel.sequelize!.transaction(async (transaction) => {
       await registro.update(
-        { ...this.camposRegistro(dto), path },
+        {
+          ...this.camposRegistro(dto),
+          ...this.camposRecepcion(dto, usuario),
+          path,
+        },
         { transaction },
       );
       await this.sincronizarTurnosDeRegistro(
@@ -497,6 +526,7 @@ export class RegistrosService {
   private async aFilas(registros: Registro[]) {
     const rfcs = registros.flatMap((r) => [
       r.remitenteRfc,
+      r.destinatario ?? '',
       ...(r.turnos ?? []).map((t) => t.userRfc),
     ]);
     const nombres = await this.padron.nombresPorRfc(rfcs);
@@ -509,6 +539,7 @@ export class RegistrosService {
         asunto: r.descripcionDoc,
         indicaciones: r.tituloDoc,
         remitente: nombreRemitente(r, nombres),
+        dirigidoA: dirigidoA(r, nombres),
         tipo: r.tipo?.tipo ?? '',
         urgente: Number(r.tipoAtencion) !== 1,
         fechaRecepcion: r.fechaRecepcion,
@@ -535,6 +566,35 @@ export class RegistrosService {
         'La fecha límite de atención no puede ser anterior a la de recepción.',
       );
     }
+  }
+
+  /** Recepción de Presidencia: "Dirigido a" es obligatorio y, si es "otro", su nombre. */
+  private validarRecepcion(dto: RegistroDto, usuario: UsuarioActual): void {
+    if (usuario.rol !== ROL_RECEPCION) return;
+    if (!dto.destinatario) {
+      throw new BadRequestException('Indica a quién va dirigido el documento.');
+    }
+    if (dto.destinatario === DESTINATARIO_OTRO && !dto.destinatarioOtro) {
+      throw new BadRequestException(
+        'Especifica a quién va dirigido el documento.',
+      );
+    }
+  }
+
+  /**
+   * Campos de Recepción de Presidencia. A los demás roles no se les piden: no se tocan (al editar
+   * un registro de recepción, otro usuario no los borra).
+   */
+  private camposRecepcion(dto: RegistroDto, usuario: UsuarioActual) {
+    if (usuario.rol !== ROL_RECEPCION) return {};
+    return {
+      tipoCorrespondencia: dto.tipoCorrespondencia ?? null,
+      destinatario: dto.destinatario?.toUpperCase() ?? null,
+      destinatarioOtro:
+        dto.destinatario === DESTINATARIO_OTRO
+          ? (dto.destinatarioOtro ?? null)
+          : null,
+    };
   }
 
   private camposRegistro(dto: RegistroDto) {
@@ -693,4 +753,14 @@ export class RegistrosService {
       transaction,
     );
   }
+}
+
+/** "Dirigido a" que capturó Recepción de Presidencia: la persona o el nombre especificado. */
+function dirigidoA(
+  r: Pick<Registro, 'destinatario' | 'destinatarioOtro'>,
+  nombres: Map<string, string>,
+): string | null {
+  if (!r.destinatario) return null;
+  if (r.destinatario === DESTINATARIO_OTRO) return r.destinatarioOtro || null;
+  return nombres.get(r.destinatario) ?? r.destinatario;
 }

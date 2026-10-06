@@ -83,6 +83,18 @@
           <dt>Remitente</dt>
           <dd>{{ r.remitente.nombre }}</dd>
         </div>
+        @if (r.dirigidoA) {
+          <div>
+            <dt>Dirigido a</dt>
+            <dd>{{ r.dirigidoA }}</dd>
+          </div>
+        }
+        @if (r.tipoCorrespondencia) {
+          <div>
+            <dt>Correspondencia</dt>
+            <dd>{{ r.tipoCorrespondencia.nombre }}</dd>
+          </div>
+        }
         <div>
           <dt>Referencia</dt>
           <dd>{{ r.referenciaDocumento || '—' }}</dd>

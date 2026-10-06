@@ -123,6 +123,49 @@
             (seleccionChange)="remitente.set($event)"
           />
         </div>
+        @if (esRecepcion) {
+          <div class="campo">
+            <span class="campo__etiqueta">Dirigido a <span class="obligatorio">*</span></span>
+            <app-persona-picker
+              fuente="servidores"
+              [multiple]="false"
+              [extras]="dirigidoOtro"
+              placeholder="Busca al servidor público o elige otra persona…"
+              [invalid]="invalidos().has('dirigidoA')"
+              [seleccion]="dirigidoA()"
+              (seleccionChange)="dirigidoA.set($event)"
+            />
+          </div>
+          @if (dirigidoEsOtro()) {
+            <div class="campo">
+              <label for="f-dirigido-otro"
+                >Especifique a quién <span class="obligatorio">*</span></label
+              >
+              <input
+                id="f-dirigido-otro"
+                type="text"
+                maxlength="255"
+                placeholder="P. ej. Juan Pérez Ruíz, Director de…"
+                [class.is-invalid]="invalidos().has('dirigidoOtro')"
+                [ngModel]="dirigidoOtroNombre()"
+                (ngModelChange)="dirigidoOtroNombre.set($event)"
+              />
+            </div>
+          }
+          <div class="campo">
+            <label for="f-correspondencia">Tipo de correspondencia</label>
+            <select
+              id="f-correspondencia"
+              [ngModel]="tipoCorrespondencia()"
+              (ngModelChange)="tipoCorrespondencia.set($event)"
+            >
+              <option [ngValue]="null">Sin especificar</option>
+              @for (t of tiposCorrespondencia; track t.id) {
+                <option [ngValue]="t.id">{{ t.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
         @if (esExterno()) {
           <div class="campo">
             <label for="f-otro"

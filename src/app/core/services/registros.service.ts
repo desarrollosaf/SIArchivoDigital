@@ -15,6 +15,8 @@ export interface RegistroListado {
   asunto: string;
   indicaciones: string;
   remitente: string;
+  /** "Dirigido a" que captura Recepción de Presidencia. */
+  dirigidoA: string | null;
   tipo: string;
   urgente: boolean;
   fechaRecepcion: string;
@@ -92,6 +94,12 @@ export interface RegistroDetalle {
   tipoSolicitud: number | null;
   salon: number | null;
   nombreEvento: string | null;
+  // Recepción de Presidencia
+  dirigidoA: string | null;
+  /** RFC, o "99999" cuando es otra persona (nombre en destinatarioOtro). */
+  destinatario: string | null;
+  destinatarioOtro: string | null;
+  tipoCorrespondencia: { id: number; nombre: string } | null;
   registradoPor: { rfc: string; nombre: string } | null;
   creado: string;
   estatus: EstatusRegistro;
@@ -128,6 +136,10 @@ export interface RegistroPayload {
   salon?: number;
   nombreEvento?: string;
   folioRastreo?: number;
+  // Solo Recepción de Presidencia
+  tipoCorrespondencia?: number;
+  destinatario?: string;
+  destinatarioOtro?: string;
   atencion: string[];
   conocimiento: string[];
 }

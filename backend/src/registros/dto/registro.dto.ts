@@ -2,6 +2,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsDateString,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -115,4 +116,25 @@ export class RegistroDto {
   @ArrayMaxSize(200)
   @IsString({ each: true })
   conocimiento: string[] = [];
+
+  // Solo los usa el rol Recepción de Presidencia; para los demás se ignoran.
+
+  /** 1 = Confidencial, 2 = Ordinaria. */
+  @IsOptional()
+  @ANumero()
+  @IsIn([1, 2], { message: 'El tipo de correspondencia no es válido' })
+  tipoCorrespondencia?: number;
+
+  /** RFC de a quién va dirigido el documento, o "99999" (otro, se especifica aparte). */
+  @IsOptional()
+  @ATexto()
+  @IsString()
+  @MaxLength(10)
+  destinatario?: string;
+
+  @IsOptional()
+  @ATexto()
+  @IsString()
+  @MaxLength(255)
+  destinatarioOtro?: string;
 }

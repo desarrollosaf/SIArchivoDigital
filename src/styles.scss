@@ -438,6 +438,12 @@ body {
   white-space: normal !important;
   padding-top: 9px !important;
   padding-bottom: 9px !important;
+
+  /* "Dirigido a" de Recepción de Presidencia, bajo el remitente. */
+  .dirigido {
+    color: var(--brand-primary);
+    font-weight: 600;
+  }
 }
 
 @media (max-width: 760px) {
