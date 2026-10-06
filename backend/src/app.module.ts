@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SequelizeModule, SequelizeModuleOptions } from '@nestjs/sequelize';
 import databaseConfig from './config/database.config';
 import authConfig from './config/auth.config';
 import storageConfig from './config/storage.config';
+import whatsappConfig from './config/whatsapp.config';
 import { MODELOS_ARCHIVO, MODELOS_SAF } from './database/archivo-db.module';
 import { Rol } from './database/models/rol.model';
 import { UsuarioRol } from './database/models/usuario-rol.model';
@@ -22,6 +24,7 @@ import { GruposModule } from './grupos/grupos.module';
 import { RolesModule } from './roles/roles.module';
 import { AgendaPresidenciaModule } from './agenda-presidencia/agenda-presidencia.module';
 import { PerfilModule } from './perfil/perfil.module';
+import { AvisosWhatsappModule } from './avisos-whatsapp/avisos-whatsapp.module';
 
 interface MysqlConnectionConfig {
   host: string;
@@ -35,8 +38,10 @@ interface MysqlConnectionConfig {
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, authConfig, storageConfig],
+      load: [databaseConfig, authConfig, storageConfig, whatsappConfig],
     }),
+    // Tareas programadas (avisos de cumpleaños por WhatsApp).
+    ScheduleModule.forRoot(),
     // Conexión principal (default): adminplem_archivoDigital, la misma base del sistema Laravel.
     SequelizeModule.forRootAsync({
       inject: [ConfigService],
@@ -98,6 +103,7 @@ interface MysqlConnectionConfig {
     GruposModule,
     AgendaPresidenciaModule,
     PerfilModule,
+    AvisosWhatsappModule,
   ],
 })
 export class AppModule {}

@@ -1,0 +1,165 @@
+:host {
+  display: block;
+}
+
+.aviso--ok {
+  background: #eef6e6 !important;
+  color: #3f6b16;
+}
+
+code {
+  font-size: 0.82em;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 992px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.telefonos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 0;
+    flex-wrap: wrap;
+
+    & + li {
+      border-top: 1px solid #f1eff0;
+    }
+
+    > div {
+      display: flex;
+      flex: 1 1 180px;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    strong {
+      font-size: 0.9rem;
+      color: var(--brand-ink);
+    }
+
+    span {
+      font-size: 0.82rem;
+      color: var(--brand-muted);
+    }
+
+    &.inactivo > div {
+      opacity: 0.55;
+    }
+  }
+}
+
+.interruptor {
+  position: relative;
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  span {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #cfcbcd;
+    transition: background 0.15s;
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s;
+    }
+  }
+
+  input:checked + span {
+    background: #25a244;
+
+    &::after {
+      transform: translateX(18px);
+    }
+  }
+
+  input:focus-visible + span {
+    box-shadow: 0 0 0 3px var(--brand-primary-soft);
+  }
+}
+
+.mensaje {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px 12px 12px 2px;
+  background: #e7f6dd;
+  font-family: inherit;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #1f2a1a;
+  white-space: pre-wrap;
+}
+
+.acciones-pdf {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+
+  div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    span {
+      flex: 1;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--brand-ink);
+    }
+  }
+}
+
+.resultados {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+
+  li {
+    padding: 0.3rem 0;
+    color: var(--brand-danger);
+
+    &.ok {
+      color: #3f6b16;
+    }
+  }
+}

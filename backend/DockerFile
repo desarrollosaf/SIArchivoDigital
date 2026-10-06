@@ -31,6 +31,9 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/database ./src/database
 COPY --from=build /app/.sequelizerc ./.sequelizerc
 
+# Membrete del PDF de cumpleaños que se envía por WhatsApp.
+COPY --from=build /app/assets ./assets
+
 RUN mkdir -p /app/uploads
 
 EXPOSE 3060

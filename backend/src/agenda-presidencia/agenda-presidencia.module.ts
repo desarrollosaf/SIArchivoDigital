@@ -33,5 +33,7 @@ import { DiputadosService } from './diputados.service';
     GabineteService,
     DiputadosService,
   ],
+  // Lo usan los avisos de cumpleaños por WhatsApp.
+  exports: [CumpleanosService],
 })
 export class AgendaPresidenciaModule {}

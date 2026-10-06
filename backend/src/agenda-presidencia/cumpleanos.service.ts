@@ -78,9 +78,10 @@ export class CumpleanosService {
 
   /**
    * Mes completo para el PDF. `mes` es "actual", "siguiente" o un número de 1 a 12; un mes que
-   * ya pasó este año se toma del año siguiente.
+   * ya pasó este año se toma del año siguiente. `todoElGabinete`: sin excluir cargos (el PDF que
+   * Laravel mandaba por WhatsApp sí incluía a JUCOPO; el de la pantalla no).
    */
-  async mes(mes: string): Promise<CumpleanosMes> {
+  async mes(mes: string, todoElGabinete = false): Promise<CumpleanosMes> {
     const [anioHoy, mesHoy] = fechaHoyMexico().split('-').map(Number);
     let anio = anioHoy;
     let numero: number;
@@ -99,13 +100,31 @@ export class CumpleanosService {
 
     const [diputados, gabinete] = await Promise.all([
       this.legisladores(),
-      this.gabinete(numero, true),
+      this.gabinete(numero, !todoElGabinete),
     ]);
     return {
       anio,
       mes: numero,
       diputados: diputadosDelMes(diputados, numero),
       gabinete,
+    };
+  }
+
+  /**
+   * Quienes cumplen años hoy (aviso diario por WhatsApp). Como el recordatorio de Laravel
+   * (CumpleTask), incluye a todo el gabinete, sin excluir cargos.
+   */
+  async delDia() {
+    const hoy = fechaHoyMexico();
+    const [, mes, dia] = hoy.split('-').map(Number);
+    const [diputados, gabinete] = await Promise.all([
+      this.legisladores(),
+      this.gabinete(mes, false),
+    ]);
+    return {
+      fecha: hoy,
+      diputados: diputadosDelMes(diputados, mes).filter((d) => d.dia === dia),
+      gabinete: gabinete.filter((g) => g.dia === dia),
     };
   }
 
@@ -123,7 +142,7 @@ export class CumpleanosService {
 
   private async gabinete(
     mes: number,
-    paraPdf: boolean,
+    excluirCargos: boolean,
   ): Promise<CumpleGabinete[]> {
     const filas = await this.registroModel.sequelize!.query<{
       nombre: string | null;
@@ -133,7 +152,7 @@ export class CumpleanosService {
     }>(
       'SELECT nombre, cargo, DAY(fecha_nacimiento) AS dia, tipo FROM pumpes_gabinetes ' +
         'WHERE deleted_at IS NULL AND MONTH(fecha_nacimiento) = :mes' +
-        (paraPdf ? ' AND (cargo IS NULL OR cargo NOT IN (:excluidos))' : '') +
+        (excluirCargos ? ' AND (cargo IS NULL OR cargo NOT IN (:excluidos))' : '') +
         ' ORDER BY DAY(fecha_nacimiento), nombre',
       {
         type: QueryTypes.SELECT,

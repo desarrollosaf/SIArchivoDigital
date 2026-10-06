@@ -127,6 +127,14 @@ export const routes: Routes = [
           import('./features/administracion/grupos/grupos').then((m) => m.Grupos),
       },
       {
+        path: 'administracion/avisos-whatsapp',
+        canActivate: [roleGuard(['administrador'])],
+        loadComponent: () =>
+          import('./features/administracion/avisos-whatsapp/avisos-whatsapp').then(
+            (m) => m.AvisosWhatsapp,
+          ),
+      },
+      {
         path: 'administracion/roles',
         canActivate: [roleGuard(['administrador'])],
         loadChildren: () =>

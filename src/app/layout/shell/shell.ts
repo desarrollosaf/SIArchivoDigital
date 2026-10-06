@@ -67,6 +67,7 @@ const ADMINISTRACION: NavItem = {
     { label: 'Clasificación archivística', route: '/administracion/clasificacion' },
     { label: 'Grupos de destinatarios', route: '/administracion/grupos' },
     { label: 'Roles de usuario', route: '/administracion/roles' },
+    { label: 'Avisos por WhatsApp', route: '/administracion/avisos-whatsapp' },
   ],
 };
 
