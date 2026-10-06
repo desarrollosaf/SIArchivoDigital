@@ -1,0 +1,220 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Mi cuenta</h1>
+      <p>
+        Tu foto, tus datos de contacto y tu contraseña. Son los mismos en todos los sistemas de la
+        SAF.
+      </p>
+    </div>
+    <a
+      class="btn btn--outline btn--sm"
+      href="assets/manual/Manual-de-usuario-SIArchivoDigital.pdf"
+      target="_blank"
+      rel="noopener"
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M5 4.5A1.5 1.5 0 0 1 6.5 3H14l5 5v11.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-15Z"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M14 3v5h5M9 13h6M9 17h4"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+      </svg>
+      <span>Manual de usuario</span>
+    </a>
+  </header>
+
+  @if (cargando()) {
+    <div class="tarjeta"><p class="aviso">Cargando tus datos…</p></div>
+  } @else {
+    <div class="rejilla">
+      <div class="tarjeta">
+        <h2>Datos de contacto</h2>
+
+        <div class="perfil">
+          <div class="avatar">
+            @if (foto(); as f) {
+              <img [src]="f" alt="Tu foto de perfil" />
+            } @else {
+              <span>{{ iniciales() }}</span>
+            }
+          </div>
+          <div class="perfil__info">
+            <strong>{{ user()?.nombre }}</strong>
+            <small
+              >{{ user()?.rfc }}
+              @if (user()?.puesto) {
+                · {{ user()?.puesto }}
+              }
+            </small>
+            <label class="btn btn--outline btn--sm subir" [class.is-disabled]="subiendoFoto()">
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                [disabled]="subiendoFoto()"
+                (change)="onFoto($event)"
+              />
+              {{ subiendoFoto() ? 'Subiendo…' : foto() ? 'Cambiar foto' : 'Subir foto' }}
+            </label>
+          </div>
+        </div>
+
+        <div class="formulario">
+          <div class="campo">
+            <label for="p-email">Correo electrónico <span class="obligatorio">*</span></label>
+            <input
+              id="p-email"
+              type="email"
+              maxlength="255"
+              autocomplete="email"
+              [ngModel]="email()"
+              (ngModelChange)="email.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="p-email2">Confirma el correo</label>
+            <input
+              id="p-email2"
+              type="email"
+              maxlength="255"
+              [disabled]="!pideConfirmarEmail()"
+              [placeholder]="pideConfirmarEmail() ? 'Escríbelo de nuevo' : 'Sin cambios'"
+              [ngModel]="email2()"
+              (ngModelChange)="email2.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="p-cel">Teléfono celular <span class="obligatorio">*</span></label>
+            <input
+              id="p-cel"
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              placeholder="10 dígitos"
+              [ngModel]="cel()"
+              (ngModelChange)="cel.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="p-cel2">Confirma el teléfono</label>
+            <input
+              id="p-cel2"
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              [disabled]="!pideConfirmarCel()"
+              [placeholder]="pideConfirmarCel() ? 'Escríbelo de nuevo' : 'Sin cambios'"
+              [ngModel]="cel2()"
+              (ngModelChange)="cel2.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="whats">
+          <div>
+            <strong>Avisos por WhatsApp</strong>
+            <p>
+              Recibe un mensaje cuando te turnen un documento. Asegúrate de que tu teléfono esté
+              actualizado.
+            </p>
+          </div>
+          <label class="interruptor">
+            <input
+              type="checkbox"
+              role="switch"
+              [ngModel]="whats()"
+              (ngModelChange)="whats.set($event)"
+              aria-label="Avisos por WhatsApp"
+            />
+            <span></span>
+          </label>
+        </div>
+
+        <div class="acciones-formulario">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="guardandoDatos()"
+            (click)="guardarDatos()"
+          >
+            {{ guardandoDatos() ? 'Guardando…' : 'Guardar datos' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Cambiar contraseña</h2>
+        <div class="formulario formulario--1">
+          <div class="campo">
+            <label for="c-actual">Contraseña actual <span class="obligatorio">*</span></label>
+            <input
+              id="c-actual"
+              [type]="verContrasenas() ? 'text' : 'password'"
+              autocomplete="current-password"
+              [ngModel]="actual()"
+              (ngModelChange)="actual.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="c-nueva">Nueva contraseña <span class="obligatorio">*</span></label>
+            <input
+              id="c-nueva"
+              [type]="verContrasenas() ? 'text' : 'password'"
+              autocomplete="new-password"
+              maxlength="72"
+              [ngModel]="nueva()"
+              (ngModelChange)="nueva.set($event)"
+            />
+          </div>
+          <div class="campo">
+            <label for="c-confirma"
+              >Confirma la nueva contraseña <span class="obligatorio">*</span></label
+            >
+            <input
+              id="c-confirma"
+              [type]="verContrasenas() ? 'text' : 'password'"
+              autocomplete="new-password"
+              maxlength="72"
+              [class.is-invalid]="!!confirmacion() && confirmacion() !== nueva()"
+              [ngModel]="confirmacion()"
+              (ngModelChange)="confirmacion.set($event)"
+            />
+          </div>
+          <label class="casilla">
+            <input
+              type="checkbox"
+              [ngModel]="verContrasenas()"
+              (ngModelChange)="verContrasenas.set($event)"
+            />
+            Mostrar contraseñas
+          </label>
+        </div>
+
+        <ul class="reglas">
+          @for (r of reglas(); track r.texto) {
+            <li [class.ok]="r.ok">{{ r.texto }}</li>
+          }
+          <li [class.ok]="!!nueva() && nueva() === confirmacion()">La confirmación coincide</li>
+        </ul>
+
+        <div class="acciones-formulario">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="guardandoClave() || !claveValida()"
+            (click)="cambiarContrasena()"
+          >
+            {{ guardandoClave() ? 'Guardando…' : 'Cambiar contraseña' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

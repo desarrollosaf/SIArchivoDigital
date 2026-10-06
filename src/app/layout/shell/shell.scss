@@ -97,6 +97,30 @@
     color: var(--brand-ink);
     white-space: nowrap;
   }
+
+  // El nombre lleva a "Mi cuenta" (datos de contacto, contraseña, manual).
+  &__cuenta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.15s;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: var(--brand-primary);
+    }
+
+    &:hover,
+    &.activo {
+      background: var(--brand-primary-soft);
+      color: var(--brand-primary-dark);
+    }
+  }
 }
 
 @media (min-width: 992px) {

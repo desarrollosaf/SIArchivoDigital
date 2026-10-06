@@ -1,0 +1,82 @@
+<section class="pagina">
+  <header class="pagina__encabezado no-imprimir">
+    <div>
+      <h1>Próximos eventos</h1>
+      <p>Eventos registrados para mañana, para preparar la jornada. Puedes consultar otro día.</p>
+    </div>
+    <div class="pagina__acciones">
+      <input
+        class="selector-fecha"
+        type="date"
+        aria-label="Día"
+        [ngModel]="fecha()"
+        (ngModelChange)="cambiarFecha($event)"
+      />
+      <button
+        type="button"
+        class="btn btn--primary btn--sm"
+        [disabled]="!datos()?.eventos?.length"
+        (click)="imprimir()"
+      >
+        Imprimir / guardar PDF
+      </button>
+    </div>
+  </header>
+
+  @if (cargando() && !datos()) {
+    <div class="tarjeta"><p class="aviso">Cargando eventos…</p></div>
+  } @else if (datos(); as d) {
+    <article class="tarjeta hoja">
+      <header class="hoja__encabezado">
+        <img src="assets/congreso-edomex-logo.png" alt="Congreso del Estado de México" />
+        <div>
+          <h2>Próximos eventos</h2>
+          <p class="fecha">{{ diaLargo(d.fecha) }}</p>
+        </div>
+        <span class="etiqueta etiqueta--vino">
+          {{ d.eventos.length }} {{ d.eventos.length === 1 ? 'evento' : 'eventos' }}
+        </span>
+      </header>
+
+      @if (d.eventos.length === 0) {
+        <p class="aviso">No hay eventos registrados para este día.</p>
+      } @else {
+        <ol class="eventos">
+          @for (e of d.eventos; track e.id) {
+            <li class="evento">
+              <div class="evento__hora">{{ horario(e) }}</div>
+              <div class="evento__cuerpo">
+                <h3>{{ e.nombreEvento || e.asunto }}</h3>
+                @if (e.nombreEvento && e.asunto !== e.nombreEvento) {
+                  <p>{{ e.asunto }}</p>
+                }
+                <dl>
+                  <div>
+                    <dt>Indicaciones</dt>
+                    <dd>{{ e.indicaciones }}</dd>
+                  </div>
+                  <div>
+                    <dt>Para su atención</dt>
+                    <dd>{{ e.atencion.length ? e.atencion.join(', ') : '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+              <div class="evento__lado">
+                <span class="folio">{{ e.folio }}</span>
+                @if (e.tieneArchivo) {
+                  <button
+                    type="button"
+                    class="btn btn--outline btn--sm no-imprimir"
+                    (click)="verArchivo(e)"
+                  >
+                    Ver documento
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </article>
+  }
+</section>

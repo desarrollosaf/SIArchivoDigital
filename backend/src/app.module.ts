@@ -21,6 +21,7 @@ import { ClasificacionModule } from './clasificacion/clasificacion.module';
 import { GruposModule } from './grupos/grupos.module';
 import { RolesModule } from './roles/roles.module';
 import { AgendaPresidenciaModule } from './agenda-presidencia/agenda-presidencia.module';
+import { PerfilModule } from './perfil/perfil.module';
 
 interface MysqlConnectionConfig {
   host: string;
@@ -96,6 +97,7 @@ interface MysqlConnectionConfig {
     ClasificacionModule,
     GruposModule,
     AgendaPresidenciaModule,
+    PerfilModule,
   ],
 })
 export class AppModule {}

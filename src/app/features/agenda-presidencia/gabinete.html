@@ -1,0 +1,201 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Gabinete</h1>
+      <p>Personas del gabinete y su fecha de nacimiento; aparecen en "Cumpleaños del mes".</p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="nuevo()">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 5v14M5 12h14"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+      <span>Agregar persona</span>
+    </button>
+  </header>
+
+  <div class="filtros">
+    <input
+      type="search"
+      placeholder="Buscar por nombre o cargo…"
+      aria-label="Buscar"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)"
+    />
+    <div class="segmentos" role="group" aria-label="Filtrar por tipo">
+      <button type="button" [class.activo]="filtroTipo() === null" (click)="filtroTipo.set(null)">
+        Todos
+      </button>
+      @for (t of tipos; track t.valor) {
+        <button
+          type="button"
+          [class.activo]="filtroTipo() === t.valor"
+          (click)="filtroTipo.set(t.valor)"
+        >
+          {{ nombreTipo(t.valor) }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="tarjeta"><p class="aviso">Cargando gabinete…</p></div>
+  } @else if (visibles().length === 0) {
+    <div class="tarjeta">
+      <p class="aviso">
+        {{
+          integrantes().length
+            ? 'Nadie coincide con la búsqueda.'
+            : 'Todavía no hay personas en el gabinete.'
+        }}
+      </p>
+    </div>
+  } @else {
+    <div class="tarjetas">
+      @for (g of visibles(); track g.id) {
+        <article class="tarjeta persona">
+          <div class="persona__foto">
+            @if (fotos()[g.id]; as f) {
+              <img [src]="f" [alt]="g.nombre" loading="lazy" />
+            } @else {
+              <span>{{ iniciales(g.nombre) }}</span>
+            }
+          </div>
+          <div class="persona__datos">
+            <span class="etiqueta" [class.etiqueta--vino]="g.tipo === 1">{{
+              nombreTipo(g.tipo)
+            }}</span>
+            <h2>{{ g.profesion ? g.profesion + ' ' : '' }}{{ g.nombre }}</h2>
+            @if (g.cargo) {
+              <p class="cargo">{{ g.cargo }}</p>
+            }
+            <p class="cumple">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7M12 12V9M12 6.5c-.8-.8-.8-1.8 0-3 .8 1.2.8 2.2 0 3Z"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              {{ cumpleanos(g.fechaNacimiento) }}
+            </p>
+            @if (g.otros) {
+              <p class="otros">{{ g.otros }}</p>
+            }
+          </div>
+          <footer>
+            <button type="button" class="btn btn--outline btn--sm" (click)="editar(g)">
+              Editar
+            </button>
+            <button type="button" class="btn btn--peligro btn--sm" (click)="eliminar(g)">
+              Eliminar
+            </button>
+          </footer>
+        </article>
+      }
+    </div>
+  }
+
+  @if (editando(); as e) {
+    <app-modal
+      [titulo]="e.id ? 'Editar persona del gabinete' : 'Agregar persona al gabinete'"
+      ancho="ancho"
+      (cerrar)="cerrar()"
+    >
+      <div class="foto-form">
+        <div class="persona__foto persona__foto--grande">
+          @if (vistaPrevia(); as v) {
+            <img [src]="v" alt="Vista previa de la foto" />
+          } @else {
+            <span>{{ iniciales(nombre()) || '?' }}</span>
+          }
+        </div>
+        <label class="btn btn--outline btn--sm subir">
+          <input type="file" accept=".jpg,.jpeg,.png,.webp" (change)="onFoto($event)" />
+          {{ vistaPrevia() ? 'Cambiar foto' : 'Elegir foto' }}
+        </label>
+      </div>
+
+      <div class="formulario">
+        <div class="campo campo--completo">
+          <label for="g-nombre">Nombre <span class="obligatorio">*</span></label>
+          <input
+            id="g-nombre"
+            type="text"
+            maxlength="255"
+            [ngModel]="nombre()"
+            (ngModelChange)="nombre.set($event)"
+          />
+        </div>
+        <div class="campo campo--completo">
+          <label for="g-cargo">Cargo</label>
+          <input
+            id="g-cargo"
+            type="text"
+            maxlength="255"
+            [ngModel]="cargo()"
+            (ngModelChange)="cargo.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <label for="g-profesion">Profesión / título</label>
+          <input
+            id="g-profesion"
+            type="text"
+            maxlength="255"
+            placeholder="P. ej. Mtra., Lic., Dr."
+            [ngModel]="profesion()"
+            (ngModelChange)="profesion.set($event)"
+          />
+        </div>
+        <div class="campo">
+          <label for="g-fecha">Fecha de nacimiento</label>
+          <input
+            id="g-fecha"
+            type="date"
+            [ngModel]="fechaNacimiento()"
+            (ngModelChange)="fechaNacimiento.set($event)"
+          />
+        </div>
+        <div class="campo campo--completo">
+          <label for="g-otros">Otros datos</label>
+          <input
+            id="g-otros"
+            type="text"
+            maxlength="255"
+            [ngModel]="otros()"
+            (ngModelChange)="otros.set($event)"
+          />
+        </div>
+        <div class="campo campo--completo">
+          <span class="campo__etiqueta">Pertenece a <span class="obligatorio">*</span></span>
+          <div class="opciones">
+            @for (t of tipos; track t.valor) {
+              <label class="casilla">
+                <input
+                  type="radio"
+                  name="g-tipo"
+                  [checked]="tipo() === t.valor"
+                  (change)="tipo.set(t.valor)"
+                />
+                {{ t.nombre }}
+              </label>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="acciones-formulario">
+        <button type="button" class="btn btn--outline" (click)="cerrar()">Cancelar</button>
+        <button type="button" class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
+          {{ guardando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+</section>

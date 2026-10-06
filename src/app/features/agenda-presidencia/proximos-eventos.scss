@@ -1,0 +1,139 @@
+:host {
+  display: block;
+}
+
+.selector-fecha {
+  height: 38px;
+  padding: 0 0.7rem;
+  border: 1.5px solid var(--brand-border);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--brand-ink);
+}
+
+.hoja__encabezado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 3px solid var(--brand-primary);
+
+  img {
+    height: 50px;
+  }
+
+  div {
+    flex: 1;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--brand-primary);
+  }
+
+  .fecha {
+    margin: 0.15rem 0 0;
+    color: var(--brand-ink);
+    text-transform: capitalize;
+  }
+}
+
+.eventos {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.evento {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--brand-border);
+  border-left: 4px solid var(--brand-primary);
+  border-radius: 12px;
+  break-inside: avoid;
+
+  @media (max-width: 768px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  &__hora {
+    font-weight: 800;
+    color: var(--brand-primary);
+    white-space: nowrap;
+  }
+
+  &__cuerpo {
+    h3 {
+      margin: 0;
+      font-size: 0.98rem;
+      color: var(--brand-ink);
+    }
+
+    p {
+      margin: 0.2rem 0 0;
+      font-size: 0.85rem;
+      color: var(--brand-muted);
+    }
+
+    dl {
+      display: grid;
+      gap: 0.35rem;
+      margin: 0.6rem 0 0;
+    }
+
+    dt {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--brand-muted);
+    }
+
+    dd {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--brand-ink);
+      white-space: pre-line;
+    }
+  }
+
+  &__lado {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+
+    @media (max-width: 768px) {
+      align-items: flex-start;
+    }
+  }
+}
+
+.folio {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brand-ink);
+  white-space: nowrap;
+}
+
+@media print {
+  .hoja {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .evento {
+    border-left-color: var(--brand-primary);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

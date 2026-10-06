@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
-import { extname, join, normalize, resolve, sep } from 'path';
+import { dirname, extname, join, normalize, resolve, sep } from 'path';
 import type { Response } from 'express';
 
 export const MAX_ARCHIVO_BYTES = 20 * 1024 * 1024;
@@ -64,6 +64,27 @@ export class ArchivosService {
     const relativa = `${carpeta}/${randomUUID()}${extension}`;
     const destino = this.rutaAbsoluta(relativa);
     await mkdir(join(this.raiz, carpeta), { recursive: true });
+    await writeFile(destino, archivo.buffer);
+    return relativa;
+  }
+
+  /**
+   * Guarda (o reemplaza) el archivo en una ruta fija, p. ej. la foto de perfil "fotos/RFC.png"
+   * que también leen los otros sistemas que comparten users_safs.
+   */
+  async guardarEn(
+    archivo: Express.Multer.File,
+    relativa: string,
+    extensiones: string[],
+  ): Promise<string> {
+    const extension = extname(archivo.originalname).toLowerCase();
+    if (!extensiones.includes(extension)) {
+      throw new BadRequestException(
+        `Solo se permiten archivos ${extensiones.join(', ')}`,
+      );
+    }
+    const destino = this.rutaAbsoluta(relativa);
+    await mkdir(dirname(destino), { recursive: true });
     await writeFile(destino, archivo.buffer);
     return relativa;
   }

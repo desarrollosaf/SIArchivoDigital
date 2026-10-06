@@ -30,6 +30,7 @@ import { SUsers } from './models/s-users.model';
 import { TDependencia } from './models/t-dependencia.model';
 import { TDireccion } from './models/t-direccion.model';
 import { TDepartamento } from './models/t-departamento.model';
+import { PumpesGabinete } from './models/pumpes-gabinete.model';
 
 export const MODELOS_ARCHIVO = [
   Registro,
@@ -52,6 +53,7 @@ export const MODELOS_ARCHIVO = [
   TipoReunion,
   RegistroPresidencia,
   ComisionRegistro,
+  PumpesGabinete,
 ];
 
 export const MODELOS_SAF = [

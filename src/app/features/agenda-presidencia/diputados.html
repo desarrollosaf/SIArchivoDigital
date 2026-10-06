@@ -1,0 +1,153 @@
+<section class="pagina">
+  <header class="pagina__encabezado">
+    <div>
+      <h1>Diputados</h1>
+      <p>Ficha de las y los diputados con datos del portal del Legislativo.</p>
+    </div>
+  </header>
+
+  <div class="disposicion">
+    <aside class="tarjeta lista">
+      <input
+        type="search"
+        placeholder="Buscar por nombre, partido o distrito…"
+        aria-label="Buscar diputado"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+      @if (cargando()) {
+        <p class="aviso">Cargando…</p>
+      } @else if (visibles().length === 0) {
+        <p class="aviso">Nadie coincide con la búsqueda.</p>
+      } @else {
+        <ul>
+          @for (d of visibles(); track d.id) {
+            <li>
+              <button type="button" [class.activo]="seleccionado() === d.id" (click)="ver(d)">
+                <span class="nombre">{{ d.nombre }}</span>
+                @if (d.partido || d.distrito) {
+                  <small>
+                    {{ d.partido }}
+                    @if (d.partido && d.distrito) {
+                      ·
+                    }
+                    @if (d.distrito) {
+                      Distrito {{ d.distrito }}
+                    }
+                  </small>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+
+    <div class="detalle">
+      @if (cargandoFicha()) {
+        <div class="tarjeta"><p class="aviso">Cargando ficha…</p></div>
+      } @else if (ficha(); as f) {
+        <article class="tarjeta ficha">
+          <div class="ficha__encabezado">
+            <div class="ficha__foto">
+              @if (f.foto && !fotoRota()) {
+                <img [src]="f.foto" [alt]="f.nombre" (error)="fotoRota.set(true)" />
+              } @else {
+                <span>{{ iniciales(f.nombre) }}</span>
+              }
+            </div>
+            <div>
+              <span class="tratamiento">{{ f.tratamiento }}</span>
+              <h2>{{ f.nombre }}</h2>
+              <div class="chips">
+                @if (f.partido) {
+                  <span class="etiqueta etiqueta--vino" [title]="f.partidoNombre ?? ''">{{
+                    f.partido
+                  }}</span>
+                }
+                @if (f.distrito) {
+                  <span class="etiqueta">Distrito {{ f.distrito }}</span>
+                }
+                @if (f.cabecera) {
+                  <span class="etiqueta">{{ f.cabecera }}</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <dl class="datos">
+            @if (f.nacimiento; as n) {
+              <div>
+                <dt>Cumpleaños</dt>
+                <dd>{{ nacimiento(n).cumple }}</dd>
+              </div>
+              <div>
+                <dt>Fecha de nacimiento</dt>
+                <dd>{{ nacimiento(n).completa }}</dd>
+              </div>
+            }
+            @if (f.email) {
+              <div>
+                <dt>Correo</dt>
+                <dd>
+                  <a [href]="'mailto:' + f.email">{{ f.email }}</a>
+                </dd>
+              </div>
+            }
+            @if (f.ext?.trim()) {
+              <div>
+                <dt>Extensión</dt>
+                <dd>{{ f.ext }}</dd>
+              </div>
+            }
+            @if (f.telefono?.trim()) {
+              <div>
+                <dt>Teléfono</dt>
+                <dd>{{ f.telefono }}</dd>
+              </div>
+            }
+          </dl>
+
+          @if (f.descripcion) {
+            <p class="descripcion">{{ f.descripcion }}</p>
+          }
+
+          @if (f.redes.facebook || f.redes.twitter || f.redes.instagram || f.redes.web) {
+            <div class="redes">
+              @if (f.redes.facebook) {
+                <a [href]="f.redes.facebook" target="_blank" rel="noopener">Facebook</a>
+              }
+              @if (f.redes.twitter) {
+                <a [href]="f.redes.twitter" target="_blank" rel="noopener">X / Twitter</a>
+              }
+              @if (f.redes.instagram) {
+                <a [href]="f.redes.instagram" target="_blank" rel="noopener">Instagram</a>
+              }
+              @if (f.redes.web) {
+                <a [href]="f.redes.web" target="_blank" rel="noopener">Sitio web</a>
+              }
+            </div>
+          }
+
+          <h3>Comisiones</h3>
+          @if (f.comisiones.length === 0) {
+            <p class="aviso">Sin comisiones registradas.</p>
+          } @else {
+            <ul class="comisiones">
+              @for (c of f.comisiones; track $index) {
+                <li [class.preside]="c.cargo === 'Presidencia'">
+                  <strong>{{ c.cargo || 'Integrante' }}</strong>
+                  <span>{{ c.comision }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      } @else {
+        <div class="tarjeta vacio">
+          <p class="aviso">Elige a una diputada o diputado de la lista para ver su ficha.</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

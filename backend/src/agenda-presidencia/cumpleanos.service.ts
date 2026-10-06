@@ -160,9 +160,9 @@ function diputadosDelMes(
 }
 
 /** "XXXX800424" -> { mes: 4, dia: 24 }; null si los últimos 6 caracteres no son una fecha. */
-function nacimientoDesdeRfc(
+export function nacimientoDesdeRfc(
   rfc: string | null,
-): { mes: number; dia: number } | null {
+): { anio: number; mes: number; dia: number } | null {
   const m = /(\d{2})(\d{2})(\d{2})$/.exec((rfc ?? '').trim());
   if (!m) return null;
   const yy = Number(m[1]);
@@ -172,5 +172,5 @@ function nacimientoDesdeRfc(
   const fecha = new Date(Date.UTC(anio, mes - 1, dia));
   if (fecha.getUTCMonth() !== mes - 1 || fecha.getUTCDate() !== dia)
     return null;
-  return { mes, dia };
+  return { anio, mes, dia };
 }

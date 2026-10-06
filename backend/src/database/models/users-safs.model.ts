@@ -40,6 +40,10 @@ export class UsersSafs extends Model {
   @Column({ type: DataType.STRING(10), allowNull: true })
   declare cel: string;
 
+  /** 1 = quiere avisos por WhatsApp de los turnos que recibe (Datos de contacto). */
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare whats: number | null;
+
   @Column({ type: DataType.STRING(250), allowNull: true })
   declare path_foto: string;
 

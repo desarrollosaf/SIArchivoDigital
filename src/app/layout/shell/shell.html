@@ -129,7 +129,23 @@
           </div>
 
           @if (user(); as u) {
-            <span class="topbar__username">{{ u.nombre }}</span>
+            <a
+              class="topbar__username topbar__cuenta"
+              routerLink="/mi-cuenta"
+              routerLinkActive="activo"
+              title="Mi cuenta: datos de contacto, contraseña y manual"
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.6" />
+                <path
+                  d="M4.8 19.5c1.2-3.2 4-4.8 7.2-4.8s6 1.6 7.2 4.8"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span>{{ u.nombre }}</span>
+            </a>
           }
           <button type="button" class="logout" (click)="logout()">
             <svg

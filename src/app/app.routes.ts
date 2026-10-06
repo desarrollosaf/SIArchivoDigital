@@ -77,6 +77,28 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'mi-cuenta',
+        loadComponent: () => import('./features/mi-cuenta/mi-cuenta').then((m) => m.MiCuenta),
+      },
+      {
+        path: 'presidencia/proximos',
+        canActivate: [roleGuard(['presidencia', 'administrador'])],
+        loadComponent: () =>
+          import('./features/agenda-presidencia/proximos-eventos').then((m) => m.ProximosEventos),
+      },
+      {
+        path: 'presidencia/diputados',
+        canActivate: [roleGuard(['presidencia', 'administrador'])],
+        loadComponent: () =>
+          import('./features/agenda-presidencia/diputados').then((m) => m.Diputados),
+      },
+      {
+        path: 'presidencia/gabinete',
+        canActivate: [roleGuard(['presidencia', 'administrador'])],
+        loadComponent: () =>
+          import('./features/agenda-presidencia/gabinete').then((m) => m.Gabinete),
+      },
+      {
         path: 'presidencia/cumpleanos',
         canActivate: [roleGuard(['presidencia', 'administrador'])],
         loadComponent: () =>
