@@ -1,53 +1,153 @@
-<section class="pagina">
-  <header class="pagina__encabezado">
-    <div>
-      <h1>Búsqueda de folios</h1>
-      <p>Busca por folio, referencia, asunto, indicaciones o nombre del remitente.</p>
-    </div>
-  </header>
+<section class="pagina intranet">
+  <div class="page-head">
+    <h2><app-icono name="buscar" /> Búsqueda de folios</h2>
+    <p>Busca por folio, referencia, asunto, indicaciones o nombre del remitente.</p>
+  </div>
 
-  <div class="tarjeta">
-    <form class="buscador" (ngSubmit)="buscar()">
+  <form class="toolbar" (ngSubmit)="buscar()">
+    <div class="search">
+      <app-icono name="buscar" />
       <input
-        type="search"
+        type="text"
         name="termino"
         placeholder="Ej. 40011/125/2026, IEEM/SE, nombre del remitente…"
+        autocomplete="off"
         [ngModel]="termino()"
         (ngModelChange)="termino.set($event)"
-        autocomplete="off"
       />
-      <button type="submit" class="btn btn--primary" [disabled]="cargando()">
-        {{ cargando() ? 'Buscando…' : 'Buscar' }}
-      </button>
-    </form>
-    <p class="aviso nota">
-      Se muestran hasta 200 resultados, los más recientes primero, de los documentos a los que
-      tienes acceso.
-    </p>
-
-    @if (error()) {
-      <p class="aviso aviso--error">{{ error() }}</p>
-    } @else if (buscado() !== null && resultados().length === 0) {
-      <p class="aviso">Sin resultados para “{{ buscado() }}”.</p>
-    } @else if (resultados().length) {
-      <p class="aviso nota">
-        {{ resultados().length }} {{ resultados().length === 1 ? 'resultado' : 'resultados' }}
-      </p>
-      <ag-grid-angular
-        class="grid-ag"
-        [theme]="gridTheme"
-        [localeText]="localeText"
-        [rowData]="resultados()"
-        [columnDefs]="columnas"
-        [rowClassRules]="clasesFila"
-        [pagination]="true"
-        [paginationPageSize]="20"
-        [paginationPageSizeSelector]="[20, 50, 100]"
-        [domLayout]="'autoHeight'"
-        [enableCellTextSelection]="true"
-        [ensureDomOrder]="true"
-        (gridReady)="onGridReady()"
-      />
+    </div>
+    @if (buscado() !== null) {
+      <button type="button" class="btn-i" (click)="limpiar()">Limpiar</button>
     }
-  </div>
+    <button type="submit" class="btn-i btn-i-primary" [disabled]="cargando()">
+      <app-icono name="buscar" /> {{ cargando() ? 'Buscando…' : 'Buscar' }}
+    </button>
+  </form>
+
+  <p class="nota">
+    Se muestran hasta 200 resultados, los más recientes primero, de los documentos a los que tienes
+    acceso.
+  </p>
+
+  @if (resultados().length) {
+    <div class="filtros-prio">
+      <small>Prioridad:</small>
+      <button
+        type="button"
+        class="badge alta filtro-prio"
+        [class.on]="prioridad() === 'alta'"
+        (click)="alternarPrioridad('alta')"
+      >
+        <span class="dot alta"></span>Urgente
+      </button>
+      <button
+        type="button"
+        class="badge media filtro-prio"
+        [class.on]="prioridad() === 'media'"
+        (click)="alternarPrioridad('media')"
+      >
+        <span class="dot media"></span>Ordinario
+      </button>
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="bandeja-cards">
+      @for (n of [1, 2, 3, 4]; track n) {
+        <div class="band-card sk-card">
+          <span class="sk sk-circle" style="width: 42px; height: 42px"></span>
+          <div class="band-main">
+            <span class="sk sk-line" style="width: 45%; margin-bottom: 8px"></span>
+            <span class="sk sk-line" style="width: 70%; margin-bottom: 8px"></span>
+            <span class="sk sk-line" style="width: 90%"></span>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <p class="aviso aviso--error">{{ error() }}</p>
+  } @else if (buscado() === null) {
+    <div class="vacio">
+      <app-icono name="buscar" />
+      <b>Escribe qué buscar</b>
+      <span>Folio, número de oficio, asunto o nombre del remitente.</span>
+    </div>
+  } @else if (filtrados().length === 0) {
+    <div class="vacio">
+      <app-icono name="buscar" />
+      <b>Sin resultados</b>
+      <span>Ningún documento coincide con “{{ buscado() }}”.</span>
+    </div>
+  } @else {
+    <div class="bandeja-cards">
+      @for (r of visibles(); track r.id) {
+        <div
+          class="band-card"
+          [class.cancelada]="r.estatus === 'Cancelado'"
+          role="button"
+          tabindex="0"
+          (click)="abierto.set(r)"
+          (keydown.enter)="abierto.set(r)"
+        >
+          <div class="band-ic" [class]="clasePrioridad(r.urgente)"><span></span></div>
+          <div class="band-main">
+            <div class="band-top">
+              <span class="band-titulo">{{ r.referencia || 'Folio ' + r.folio }}</span>
+              <span class="band-fecha">{{ fechaHora(r.creado) }}</span>
+            </div>
+            <div class="band-sub">
+              <span class="folio">{{ r.folio }}</span>
+              <span class="badge" [class]="clasePrioridad(r.urgente)">{{
+                r.urgente ? 'Urgente' : 'Ordinario'
+              }}</span>
+              @if (r.estatus === 'Cancelado') {
+                <span class="badge">Cancelado</span>
+              } @else if (r.estatus === 'Concluido') {
+                <span class="badge baja">Concluido</span>
+              } @else if (plazo(r.diasRestantes); as p) {
+                <span class="badge" [class]="p.clase">{{ p.texto }}</span>
+              }
+              <span class="band-quien"
+                >De: <b>{{ r.remitente }}</b></span
+              >
+              <span class="band-quien"
+                >· Para: <b>{{ destinatarios(r) }}</b></span
+              >
+              @if (r.dirigidoA) {
+                <span class="band-quien"
+                  >· Dirigido a: <b>{{ r.dirigidoA }}</b></span
+                >
+              }
+            </div>
+            <div class="band-desc">{{ r.asunto }}</div>
+          </div>
+          <span
+            class="estado-lectura"
+            [class.visto]="r.estatus === 'Concluido'"
+            [title]="r.estatus === 'Concluido' ? 'Concluido' : 'En proceso'"
+          >
+            <app-icono [name]="r.estatus === 'Concluido' ? 'doblecheck' : 'check'" />
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="pie-lista">
+      <small
+        >Mostrando {{ desde() }}–{{ hasta() }} de {{ filtrados().length }}
+        {{ filtrados().length === 1 ? 'resultado' : 'resultados' }}</small
+      >
+      @if (totalPaginas() > 1) {
+        <app-paginador
+          [paginaActual]="pagina()"
+          [totalPaginas]="totalPaginas()"
+          (cambiarPagina)="pagina.set($event)"
+        />
+      }
+    </div>
+  }
+
+  @if (abierto(); as r) {
+    <app-vista-rapida [registroId]="r.id" modo="salida" (cerrar)="abierto.set(null)" />
+  }
 </section>

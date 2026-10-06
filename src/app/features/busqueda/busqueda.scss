@@ -2,36 +2,8 @@
   display: block;
 }
 
-.buscador {
-  display: flex;
-  gap: 0.75rem;
-
-  input {
-    flex: 1;
-    min-width: 0;
-    height: 48px;
-    padding: 0 1rem;
-    border: 1.5px solid var(--brand-border);
-    border-radius: 12px;
-    background: #f4f6f5;
-    font-size: 0.95rem;
-    color: var(--brand-ink);
-    outline: none;
-
-    &:focus {
-      border-color: var(--brand-primary);
-      box-shadow: 0 0 0 3px var(--brand-primary-soft);
-    }
-  }
-}
-
 .nota {
-  margin: 0.75rem 0 1rem;
+  margin: -6px 0 12px;
   font-size: 0.8rem;
-}
-
-@media (max-width: 520px) {
-  .buscador {
-    flex-direction: column;
-  }
+  color: var(--brand-muted);
 }

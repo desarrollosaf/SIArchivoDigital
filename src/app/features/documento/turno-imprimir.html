@@ -21,15 +21,17 @@
     <article class="hoja">
       @for (tanto of tantos; track tanto) {
         <div class="volante">
-          <img
-            class="membrete"
-            [src]="
-              presidencia
-                ? 'assets/turno/encabezado-presidencia.png'
-                : 'assets/turno/encabezado-saf.png'
-            "
-            alt=""
-          />
+          @if (presidencia) {
+            <!-- Membrete institucional de la JUCOPO (el mismo del PDF de cumpleaños). -->
+            <img class="membrete" src="assets/membrete/encabezado.jpeg" alt="" />
+          } @else {
+            <header class="encabezado-saf">
+              <img
+                src="assets/congreso-saf.svg"
+                alt="Congreso del Estado de México · Secretaría de Administración y Finanzas"
+              />
+            </header>
+          }
 
           <div class="volante__cuerpo">
             <div class="cabecera">
@@ -115,7 +117,14 @@
           </div>
 
           @if (!presidencia) {
-            <img class="membrete" src="assets/turno/pie-saf.png" alt="" />
+            <footer class="pie-saf">
+              <span
+                >Av. Independencia Ote. 102, 7º piso, Col. Centro, Toluca, Estado de México, C.P.
+                50000</span
+              >
+              <span>Tels. 722 279 64 00 y 722 279 65 00 · Ext. 6450/6421</span>
+              <span class="pie-saf__web">www.legislativoedomex.gob.mx</span>
+            </footer>
           }
         </div>
       }
