@@ -1,0 +1,7 @@
+# Contexto de la imagen del backend. uploads es el NFS con los documentos de Laravel (varios GB):
+# se monta como volumen al correr el contenedor, nunca se copia a la imagen. .env tampoco: llega con
+# env_file y así las credenciales no quedan guardadas dentro de la imagen.
+uploads/
+node_modules/
+dist/
+.env

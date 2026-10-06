@@ -1,0 +1,12 @@
+# Contexto de la imagen del frontend (docker-compose.prod.yml → frontend). Solo necesita el código
+# de Angular: el backend tiene su propio contexto y backend/uploads es el NFS con los documentos
+# (varios GB), que nunca debe enviarse a Docker.
+backend/
+node_modules/
+dist/
+.angular/
+.git/
+.vscode/
+docs/
+*.code-workspace
+docker-compose*.yml
