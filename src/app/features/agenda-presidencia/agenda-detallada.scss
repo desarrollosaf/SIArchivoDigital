@@ -1,0 +1,458 @@
+// "Agenda del día": hoja carta horizontal, mismo diseño que el formato de Presidencia.
+$vino: #8c1538;
+$comision: #8c1538;
+$sesion: #4a2a6c;
+$evento: #2d5a80;
+$visita: #2e7d6a;
+$comedor: #a8691d;
+$foraneo: #707070;
+$rojo: #c0262d;
+$linea: #e7e2e4;
+$tinta: #222;
+$gris: #6b6b6b;
+
+:host {
+  display: block;
+}
+
+.acciones {
+  display: flex;
+  justify-content: space-between;
+}
+
+.hoja {
+  width: 100%;
+  max-width: 279mm;
+  margin: 0 auto 1.5rem;
+  padding: 8mm 10mm 0;
+  background: #fff;
+  border: 1px solid var(--brand-border);
+  color: $tinta;
+  font-family: 'Barlow', 'Roboto Condensed', Arial, Helvetica, sans-serif;
+  font-size: 8.5pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+// ---- Encabezado ------------------------------------------------------------------------------
+.encabezado {
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+  margin-bottom: 4mm;
+
+  img {
+    height: 16mm;
+    width: auto;
+    flex-shrink: 0;
+  }
+}
+
+.banda {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 11mm;
+  padding: 0 5mm;
+  background: $vino;
+  color: #fff;
+
+  h1 {
+    margin: 0;
+    font-size: 17pt;
+    font-weight: 700;
+  }
+
+  span {
+    font-size: 11pt;
+    font-weight: 600;
+  }
+}
+
+// ---- Resumen ---------------------------------------------------------------------------------
+.resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2mm 6mm;
+  margin-bottom: 2mm;
+}
+
+.cifras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7mm;
+  font-size: 9pt;
+
+  b {
+    font-weight: 700;
+  }
+}
+
+.rojo,
+.rojo-texto {
+  color: $rojo;
+}
+
+.negro {
+  color: $tinta;
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4mm;
+  font-size: 7.5pt;
+  color: $gris;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5mm;
+  }
+
+  i {
+    width: 7mm;
+    height: 2.6mm;
+    border-radius: 0.6mm;
+  }
+}
+
+.aviso-dia {
+  margin-bottom: 3mm;
+  padding: 2mm 3mm;
+  border-left: 1mm solid $visita;
+  background: #e8f2ee;
+  font-size: 8pt;
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: 0.8mm;
+  }
+}
+
+h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  margin: 2mm 0 1.5mm;
+  font-size: 12pt;
+  font-weight: 700;
+
+  small {
+    font-size: 7.5pt;
+    font-weight: 400;
+    color: $gris;
+  }
+}
+
+// ---- Colores por tipo -----------------------------------------------------------------------
+.cat-comision {
+  background: $comision;
+}
+.cat-sesion {
+  background: $sesion;
+}
+.cat-evento {
+  background: $evento;
+}
+.cat-visita {
+  background: $visita;
+}
+.cat-comedor {
+  background: $comedor;
+}
+.cat-foraneo {
+  background: $foraneo;
+}
+.cat-cancelado {
+  background: #fff;
+  border: 0.3mm dashed $gris;
+}
+
+.txt-comision {
+  color: $comision;
+}
+.txt-sesion {
+  color: $sesion;
+}
+.txt-evento {
+  color: $evento;
+}
+.txt-visita {
+  color: $visita;
+}
+.txt-comedor {
+  color: $comedor;
+}
+.txt-foraneo {
+  color: $foraneo;
+}
+.txt-cancelado {
+  color: $rojo;
+}
+
+// ---- Gráfica de ocupación -------------------------------------------------------------------
+.gantt {
+  border: 0.2mm solid $linea;
+  font-size: 7.5pt;
+
+  &__cabeza,
+  &__fila {
+    display: grid;
+    grid-template-columns: 34mm minmax(0, 1fr) 42mm;
+    align-items: center;
+  }
+
+  &__cabeza {
+    background: $vino;
+    color: #fff;
+    font-weight: 700;
+
+    .col-salon,
+    .col-libre {
+      padding: 1.2mm 2mm;
+    }
+
+    .col-linea {
+      display: grid;
+      grid-template-columns: repeat(13, minmax(0, 1fr));
+      height: 100%;
+      align-items: center;
+
+      span {
+        padding-left: 1mm;
+        font-weight: 400;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  &__fila {
+    min-height: 6mm;
+    border-top: 0.2mm solid $linea;
+
+    &:nth-child(even) {
+      background: #faf7f8;
+    }
+
+    &.recorridos {
+      color: $gris;
+      font-style: italic;
+    }
+
+    .col-salon {
+      display: flex;
+      align-items: center;
+      gap: 1.5mm;
+      padding: 0 2mm;
+    }
+
+    .col-libre {
+      padding: 0.6mm 2mm;
+    }
+
+    .col-linea {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(13, minmax(0, 1fr));
+      align-self: stretch;
+    }
+  }
+}
+
+.punto {
+  width: 2mm;
+  height: 2mm;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: $visita;
+
+  &.ocupado {
+    background: $vino;
+  }
+}
+
+.guia {
+  border-left: 0.2mm solid $linea;
+}
+
+.barra {
+  position: absolute;
+  top: 50%;
+  height: 3.6mm;
+  transform: translateY(-50%);
+  overflow: hidden;
+  border-radius: 0.8mm;
+  color: #fff;
+
+  &.cat-cancelado {
+    color: $rojo;
+  }
+
+  &__texto {
+    display: block;
+    padding: 0 1.2mm;
+    font-size: 6.5pt;
+    font-weight: 700;
+    line-height: 3.6mm;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.barra__fuera {
+  position: absolute;
+  top: 50%;
+  max-width: 30%;
+  transform: translateY(-50%);
+  overflow: hidden;
+  font-size: 6.5pt;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.libre {
+  color: $visita;
+  font-size: 7pt;
+}
+
+.libre-todo {
+  display: block;
+  padding: 0.4mm 1.5mm;
+  border-radius: 0.6mm;
+  background: #e3f0ea;
+  color: $visita;
+  font-weight: 600;
+}
+
+.libero {
+  display: block;
+  font-size: 6.5pt;
+  color: $gris;
+}
+
+// ---- Tabla de eventos -----------------------------------------------------------------------
+.eventos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+
+  th {
+    padding: 1.2mm 2mm;
+    background: $vino;
+    color: #fff;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  th:nth-child(1) {
+    width: 18mm;
+  }
+  th:nth-child(2) {
+    width: 18mm;
+  }
+  th:nth-child(4) {
+    width: 50mm;
+  }
+  th:nth-child(5) {
+    width: 42mm;
+  }
+
+  td {
+    padding: 1.2mm 2mm;
+    border-bottom: 0.2mm solid $linea;
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #faf7f8;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  .hora {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .tipo {
+    font-weight: 700;
+  }
+
+  .titulo {
+    font-weight: 700;
+  }
+
+  small {
+    display: block;
+    font-size: 7pt;
+    color: $gris;
+  }
+
+  .lugar,
+  .solicitante {
+    color: #444;
+  }
+
+  tr.cancelado {
+    .hora,
+    .titulo,
+    .lugar,
+    .solicitante {
+      color: #999;
+      text-decoration: line-through;
+    }
+  }
+}
+
+.sin-eventos {
+  margin: 0 0 3mm;
+  color: $gris;
+}
+
+// ---- Pie -------------------------------------------------------------------------------------
+.pie {
+  display: flex;
+  justify-content: space-between;
+  gap: 4mm;
+  margin-top: 3mm;
+  padding-bottom: 2mm;
+  font-size: 7pt;
+  color: $gris;
+}
+
+.banda-inferior {
+  height: 7mm;
+  margin: 0 -10mm;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 2mm, transparent 2mm 5mm),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.08) 0 2mm, transparent 2mm 5mm), $vino;
+}
+
+@media print {
+  @page {
+    size: letter landscape;
+    margin: 6mm;
+  }
+
+  .hoja {
+    max-width: none;
+    margin: 0;
+    border: none;
+    break-after: page;
+
+    &:last-of-type {
+      break-after: auto;
+    }
+  }
+}

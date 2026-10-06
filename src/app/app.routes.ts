@@ -77,6 +77,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'presidencia/agenda/detallada',
+        canActivate: [roleGuard(['presidencia', 'administrador'])],
+        loadComponent: () =>
+          import('./features/agenda-presidencia/agenda-detallada').then((m) => m.AgendaDetallada),
+      },
+      {
         path: 'mi-cuenta',
         loadComponent: () => import('./features/mi-cuenta/mi-cuenta').then((m) => m.MiCuenta),
       },

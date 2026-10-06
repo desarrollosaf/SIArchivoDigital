@@ -18,6 +18,51 @@ const COLOR_SIN_SEDE = '#c6c811';
 
 export type TipoReporte = 'general' | 'comisiones';
 
+/** Serie de los documentos de eventos (la misma que alimenta la agenda). */
+const SERIE_EVENTOS = 4161;
+const MAX_DIAS_DETALLADA = 30;
+/** Palacio Legislativo (recorridos), Evento foráneo y N/A no son salones del recinto. */
+export const SEDE_PALACIO = 1;
+const SEDE_FORANEA = 11;
+const SEDES_FUERA_DEL_RECINTO = [SEDE_PALACIO, SEDE_FORANEA, SEDE_VIRTUAL];
+const SEDE_COMEDOR = 13;
+
+export type CategoriaEvento =
+  'comision' | 'sesion' | 'evento' | 'visita' | 'comedor' | 'foraneo';
+
+/**
+ * Tipo con el que se pinta el evento en la agenda detallada. Los documentos de EVENTOS no traen
+ * tipo: se deduce de la sede (Comedor, Evento foráneo) y del texto (visitas guiadas, recorridos).
+ */
+function categoriaEvento(e: {
+  origen: 'documento' | 'legislativo';
+  sedeId: number | null;
+  tipoEvento: string | null;
+  nombreEvento: string | null;
+  asunto: string | null;
+}): CategoriaEvento {
+  if (e.sedeId === SEDE_FORANEA) return 'foraneo';
+  if (e.origen === 'legislativo') {
+    const tipo = (e.tipoEvento ?? '').toLowerCase();
+    if (tipo.includes('comisi')) return 'comision';
+    if (tipo.includes('sesi')) return 'sesion';
+    return 'evento';
+  }
+  if (e.sedeId === SEDE_COMEDOR) return 'comedor';
+  if (
+    /visita guiada|recorrido/i.test(`${e.nombreEvento ?? ''} ${e.asunto ?? ''}`)
+  ) {
+    return 'visita';
+  }
+  return 'evento';
+}
+
+/** "2026-10-06" -> "2026-10-07". */
+function diaSiguiente(fecha: string): string {
+  const [a, m, d] = fecha.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+}
+
 interface FilaAgenda {
   id: number;
   title: string | null;
@@ -130,6 +175,122 @@ export class AgendaPresidenciaService {
     };
   }
 
+  /**
+   * "Agenda detallada": por día, la ocupación de cada salón (para la gráfica de 07:00 a 20:00) y
+   * la lista de eventos, incluidos los documentos de la serie EVENTOS que se cancelaron (los
+   * eventos legislativos cancelados se borran en el sistema, así que no aparecen).
+   */
+  async detallada(desde: string, hasta: string | undefined) {
+    const fin = hasta || desde;
+    if (FECHA.test(desde) && FECHA.test(fin)) {
+      const dias = (Date.parse(fin) - Date.parse(desde)) / 86_400_000;
+      if (dias > MAX_DIAS_DETALLADA) {
+        throw new BadRequestException(
+          `La agenda detallada abarca como máximo ${MAX_DIAS_DETALLADA + 1} días.`,
+        );
+      }
+    }
+    const filas = await this.consultar({ desde, hasta: fin });
+    const activos = (await this.aVistas(filas)).map((e) => ({
+      id: e.id,
+      fecha: e.fecha,
+      horaInicio: e.horaInicio,
+      horaTermino: e.horaTermino,
+      sedeId: e.sedeId,
+      sede: e.sede,
+      categoria: categoriaEvento(e),
+      titulo:
+        e.origen === 'documento'
+          ? e.nombreEvento || e.asunto || e.titulo
+          : e.nombreEvento || e.materia || e.tipoEvento || e.titulo,
+      detalle:
+        e.origen === 'documento'
+          ? e.nombreEvento
+            ? e.asunto
+            : null
+          : e.tipoReunion,
+      solicitante:
+        e.origen === 'documento'
+          ? e.remitente
+          : e.comisiones.length > 1
+            ? 'Comisiones unidas'
+            : e.comisiones[0] || e.capturo,
+      cancelado: false,
+      canceladoEl: null as string | null,
+    }));
+
+    const cancelados = await this.registroModel.sequelize!.query<{
+      id: number;
+      fecha: string;
+      inicio: string | null;
+      fin: string | null;
+      sedeId: number | null;
+      sede: string | null;
+      nombreEvento: string | null;
+      asunto: string | null;
+      remitenteRfc: string | null;
+      otroRemitente: string | null;
+      canceladoEl: string;
+    }>(
+      `SELECT r.id, DATE_FORMAT(r.fecha_limite_atencion, '%Y-%m-%d') AS fecha,
+         TIME_FORMAT(r.hora_atencion, '%H:%i') AS inicio, TIME_FORMAT(r.hora_termino, '%H:%i') AS fin,
+         r.salon AS sedeId, s.salon AS sede, r.nombre_evento AS nombreEvento,
+         r.descripcion_doc AS asunto, r.remitente_rfc AS remitenteRfc, r.otro_remitente AS otroRemitente,
+         DATE_FORMAT(CONVERT_TZ(r.updated_at, '+00:00', '-06:00'), '%Y-%m-%d %H:%i') AS canceladoEl
+       FROM registro r
+       LEFT JOIN salones s ON s.id = r.salon
+       WHERE r.serie_id = :serie AND r.activo = 0
+         AND r.fecha_limite_atencion BETWEEN :desde AND :hasta`,
+      {
+        type: QueryTypes.SELECT,
+        replacements: { serie: SERIE_EVENTOS, desde, hasta: fin },
+      },
+    );
+    const nombres = await this.padron.nombresPorRfc(
+      cancelados
+        .map((c) => c.remitenteRfc ?? '')
+        .filter((r) => r && r !== REMITENTE_EXTERNO),
+    );
+    const eventosCancelados = cancelados.map((c) => ({
+      id: -Number(c.id),
+      fecha: c.fecha,
+      horaInicio: c.inicio && c.inicio !== '00:00' ? c.inicio : null,
+      horaTermino: c.fin && c.fin !== '00:00' ? c.fin : null,
+      sedeId: c.sedeId ? Number(c.sedeId) : null,
+      sede: c.sedeId && Number(c.sedeId) === SEDE_VIRTUAL ? 'Virtual' : c.sede,
+      categoria: 'evento',
+      titulo: c.nombreEvento || c.asunto || '',
+      detalle: c.nombreEvento ? c.asunto : null,
+      solicitante:
+        c.remitenteRfc === REMITENTE_EXTERNO
+          ? c.otroRemitente
+          : (nombres.get(c.remitenteRfc ?? '') ??
+            c.otroRemitente ??
+            c.remitenteRfc),
+      cancelado: true,
+      canceladoEl: c.canceladoEl,
+    }));
+
+    const todos = [...activos, ...eventosCancelados];
+    const fechas: string[] = [];
+    for (let d = desde; d <= fin; d = diaSiguiente(d)) fechas.push(d);
+    return {
+      desde,
+      hasta: fin,
+      salones: (await this.sedes()).filter(
+        (s) => !SEDES_FUERA_DEL_RECINTO.includes(s.id),
+      ),
+      dias: fechas.map((fecha) => ({
+        fecha,
+        eventos: todos
+          .filter((e) => e.fecha === fecha)
+          .sort((a, b) =>
+            (a.horaInicio ?? '99').localeCompare(b.horaInicio ?? '99'),
+          ),
+      })),
+    };
+  }
+
   private nombreSede(f: FilaAgenda): string | null {
     return Number(f.sedeId) === SEDE_VIRTUAL ? 'Virtual' : f.sede;
   }
@@ -153,6 +314,7 @@ export class AgendaPresidenciaService {
         fecha: f.fecha,
         horaInicio: f.inicio?.slice(11, 16) ?? null,
         horaTermino: f.fin?.slice(11, 16) ?? null,
+        sedeId: f.sedeId ? Number(f.sedeId) : null,
         sede: this.nombreSede(f),
         color: f.color ?? COLOR_SIN_SEDE,
       };

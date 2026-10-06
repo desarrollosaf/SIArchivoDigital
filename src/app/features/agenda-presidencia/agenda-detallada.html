@@ -1,0 +1,207 @@
+<section class="pagina">
+  <div class="no-imprimir acciones">
+    <a class="btn btn--outline btn--sm" routerLink="/presidencia/agenda">Regresar</a>
+    <button
+      type="button"
+      class="btn btn--primary btn--sm"
+      [disabled]="!paginas()?.length"
+      (click)="imprimir()"
+    >
+      Imprimir / guardar PDF
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="tarjeta">
+      <p class="aviso aviso--error">{{ error() }}</p>
+    </div>
+  } @else if (!paginas()) {
+    <div class="tarjeta"><p class="aviso">Generando agenda detallada…</p></div>
+  } @else {
+    @for (p of paginas(); track p.fecha; let n = $index) {
+      <article class="hoja">
+        <header class="encabezado">
+          <img src="assets/congreso-escudo.svg" alt="Congreso del Estado de México" />
+          <div class="banda">
+            <h1>Agenda del día</h1>
+            <span>{{ diaLargo(p.fecha) }}</span>
+          </div>
+        </header>
+
+        <div class="resumen">
+          <div class="cifras">
+            <span
+              ><b>{{ p.salonesConUso }}</b> de {{ p.totalSalones }} salones con uso</span
+            >
+            <span
+              ><b>{{ p.eventosRecinto }}</b> {{ p.eventosRecinto === 1 ? 'evento' : 'eventos' }} en
+              el recinto</span
+            >
+            <span
+              ><b>{{ p.recorridos }}</b> {{ p.recorridos === 1 ? 'recorrido' : 'recorridos' }}</span
+            >
+            @if (p.cancelados.length) {
+              <span class="rojo"
+                ><b>{{ p.cancelados.length }}</b>
+                {{ p.cancelados.length === 1 ? 'evento cancelado' : 'eventos cancelados' }}</span
+              >
+            }
+          </div>
+          <div class="leyenda">
+            @for (c of categorias; track c.clave) {
+              <span><i [class]="'cat-' + c.clave"></i>{{ c.nombre }}</span>
+            }
+            <span><i class="cat-cancelado"></i>Cancelado</span>
+          </div>
+        </div>
+
+        @if (p.libresTodoElDia.length || p.cancelados.length) {
+          <div class="aviso-dia">
+            @if (p.libresTodoElDia.length) {
+              <p><b>Libres todo el día:</b> {{ p.libresTodoElDia.join(', ') }}.</p>
+            }
+            @if (p.cancelados.length) {
+              <p class="rojo-texto">
+                <b
+                  >{{ p.cancelados.length }}
+                  {{ p.cancelados.length === 1 ? 'evento cancelado' : 'eventos cancelados' }}:</b
+                >
+                @for (c of p.cancelados; track c.id; let ultimo = $last) {
+                  {{ c.titulo
+                  }}<span class="negro">{{ queLiberaCancelado(c) }}{{ ultimo ? '.' : ';' }}</span>
+                }
+              </p>
+            }
+          </div>
+        }
+
+        <h2>
+          Ocupación de salones
+          <small>Cada barra cubre todo el tiempo que el salón está ocupado.</small>
+        </h2>
+        <div class="gantt">
+          <div class="gantt__cabeza">
+            <span class="col-salon">Salón</span>
+            <div class="col-linea">
+              @for (h of horas; track h) {
+                <span>{{ h }}</span>
+              }
+            </div>
+            <span class="col-libre">Horario libre (07:00 a 20:00)</span>
+          </div>
+          @for (f of p.filas; track f.nombre) {
+            <div class="gantt__fila" [class.recorridos]="f.recorridos">
+              <span class="col-salon">
+                @if (!f.recorridos) {
+                  <i class="punto" [class.ocupado]="!f.libreTodoElDia"></i>
+                }
+                {{ f.nombre }}
+              </span>
+              <div class="col-linea">
+                @for (h of horas; track h) {
+                  <i class="guia"></i>
+                }
+                @for (b of f.barras; track b.evento.id) {
+                  <div
+                    class="barra"
+                    [class]="
+                      b.evento.cancelado ? 'barra cat-cancelado' : 'barra cat-' + b.evento.categoria
+                    "
+                    [style.left.%]="b.izquierda"
+                    [style.width.%]="b.ancho"
+                    [title]="b.evento.titulo"
+                  >
+                    @if (b.textoDentro) {
+                      <span class="barra__texto"
+                        >{{ b.evento.cancelado ? 'Cancelado · ' : '' }}{{ b.evento.titulo }}</span
+                      >
+                    } @else if (b.evento.cancelado) {
+                      <span class="barra__texto">Cancelado</span>
+                    }
+                  </div>
+                  @if (!b.textoDentro && b.anchoFuera) {
+                    <span
+                      class="barra__fuera"
+                      [style.left]="'calc(' + (b.izquierda + b.ancho) + '% + 4px)'"
+                      [style.max-width.%]="b.anchoFuera"
+                      >{{ b.evento.titulo }}</span
+                    >
+                  }
+                }
+              </div>
+              <span class="col-libre">
+                <!-- Los recorridos son por todo el Palacio: no tienen "horario libre". -->
+                @if (!f.recorridos) {
+                  @if (f.libreTodoElDia) {
+                    <span class="libre-todo">Libre todo el día</span>
+                  } @else {
+                    <span class="libre">{{ f.libre }}</span>
+                  }
+                  @if (f.seLibero) {
+                    <small class="libero">{{ f.seLibero }}</small>
+                  }
+                }
+              </span>
+            </div>
+          }
+        </div>
+
+        <h2>Eventos del día <small>En orden de hora de inicio.</small></h2>
+        @if (p.eventos.length === 0) {
+          <p class="sin-eventos">No hay eventos registrados para este día.</p>
+        } @else {
+          <table class="eventos">
+            <thead>
+              <tr>
+                <th>Horario</th>
+                <th>Tipo</th>
+                <th>Evento</th>
+                <th>Lugar</th>
+                <th>Solicitante</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of p.eventos; track r.evento.id) {
+                <tr [class.cancelado]="r.evento.cancelado">
+                  <td class="hora">{{ horario(r.evento) }}</td>
+                  <td>
+                    <span
+                      class="tipo"
+                      [class]="
+                        'tipo txt-' + (r.evento.cancelado ? 'cancelado' : r.evento.categoria)
+                      "
+                      >{{ nombreCategoria(r.evento) }}</span
+                    >
+                  </td>
+                  <td>
+                    <span class="titulo">{{ r.evento.titulo }}</span>
+                    @if (r.detalle) {
+                      <small>{{ r.detalle }}</small>
+                    }
+                    @if (r.nota) {
+                      <small>{{ r.nota }}</small>
+                    }
+                    @if (r.evento.cancelado) {
+                      <small class="rojo-texto">Cancelado {{ cuandoSeCancelo(r.evento) }}.</small>
+                    }
+                  </td>
+                  <td class="lugar">{{ r.lugar }}</td>
+                  <td class="solicitante">{{ r.evento.solicitante || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <footer class="pie">
+          <span
+            >Fuente: agenda de Presidencia en SIArchivoDigital (documentos de la serie EVENTOS y
+            eventos legislativos).</span
+          >
+          <span>Página {{ n + 1 }} de {{ paginas()!.length }}</span>
+        </footer>
+        <div class="banda-inferior"></div>
+      </article>
+    }
+  }
+</section>

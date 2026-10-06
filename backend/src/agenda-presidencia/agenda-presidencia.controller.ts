@@ -49,6 +49,12 @@ export class AgendaPresidenciaController {
     return this.agendaPresidenciaService.detalle(id);
   }
 
+  /** "Agenda detallada": ocupación de salones y eventos de cada día del periodo. */
+  @Get('detallada')
+  detallada(@Query('desde') desde: string, @Query('hasta') hasta?: string) {
+    return this.agendaPresidenciaService.detallada(desde, hasta);
+  }
+
   @Get('reporte')
   reporte(
     @Query('tipo') tipo: string,

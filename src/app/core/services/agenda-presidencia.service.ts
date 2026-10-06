@@ -61,6 +61,32 @@ export interface ReportePresidencia {
   dias: { fecha: string; eventos: DetalleEventoPresidencia[] }[];
 }
 
+export type CategoriaEvento = 'comision' | 'sesion' | 'evento' | 'visita' | 'comedor' | 'foraneo';
+
+export interface EventoDetallado {
+  id: number;
+  fecha: string;
+  /** "HH:mm", hora de México. */
+  horaInicio: string | null;
+  horaTermino: string | null;
+  sedeId: number | null;
+  sede: string | null;
+  categoria: CategoriaEvento;
+  titulo: string;
+  detalle: string | null;
+  solicitante: string | null;
+  cancelado: boolean;
+  /** "YYYY-MM-DD HH:mm" en que se canceló. */
+  canceladoEl: string | null;
+}
+
+export interface AgendaDetallada {
+  desde: string;
+  hasta: string;
+  salones: SedePresidencia[];
+  dias: { fecha: string; eventos: EventoDetallado[] }[];
+}
+
 const API = `${environment.apiUrl}/agenda-presidencia`;
 
 function parametros(valores: Record<string, string | number | null | undefined>): HttpParams {
@@ -87,6 +113,12 @@ export class AgendaPresidenciaService {
 
   detalle(id: number): Observable<DetalleEventoPresidencia> {
     return this.http.get<DetalleEventoPresidencia>(`${API}/eventos/${id}`);
+  }
+
+  detallada(desde: string, hasta: string | null): Observable<AgendaDetallada> {
+    return this.http.get<AgendaDetallada>(`${API}/detallada`, {
+      params: parametros({ desde, hasta }),
+    });
   }
 
   reporte(

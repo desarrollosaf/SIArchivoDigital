@@ -95,6 +95,21 @@ export class AgendaPresidencia {
     });
   }
 
+  /** Una hoja por día con la ocupación de salones y los eventos (no usa el filtro de sede). */
+  detallada(): void {
+    if (!this.fechaInicial()) {
+      this.toastService.error('Indica al menos la fecha inicial.');
+      return;
+    }
+    if (this.fechaFinal() && this.fechaFinal() < this.fechaInicial()) {
+      this.toastService.error('La fecha final no puede ser anterior a la inicial.');
+      return;
+    }
+    void this.router.navigate(['/presidencia/agenda/detallada'], {
+      queryParams: { desde: this.fechaInicial(), hasta: this.fechaFinal() || null },
+    });
+  }
+
   imprimir(tipo: TipoReportePresidencia): void {
     if (!this.fechaInicial()) {
       this.toastService.error('Indica al menos la fecha inicial.');
