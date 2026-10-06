@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/archivodigital/backend',
+  apiUrl: '/Documentacion26/backend',
 };

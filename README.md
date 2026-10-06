@@ -147,9 +147,13 @@ MariaDB queda en `127.0.0.1:3398` (root / `archivo_local`). Para empezar de cero
 ### 4. Producción
 
 `docker compose -f docker-compose.prod.yml up -d --build` construye el frontend con
-`BASE_HREF=/archivodigital/` (nginx) y el backend en Node 24. El frontend llama a la API en
-`/archivodigital/backend` (ver `src/environments/environment.production.ts`), así que el proxy
-inverso del servidor debe enviar esa ruta al contenedor del backend.
+`--configuration production` (usa `src/environments/environment.production.ts`) y
+`BASE_HREF=/Documentacion26/`, y el backend en Node 24. Después, una vez por despliegue:
+`docker compose -f docker-compose.prod.yml exec backend npm run migrate`.
+
+El frontend llama a la API en `/Documentacion26/backend`, así que el proxy inverso del servidor
+debe enviar `/Documentacion26/backend/` al backend (puerto 3040) y `/Documentacion26/` al
+frontend (puerto 8078), en ambos casos quitando el prefijo.
 
 ## Cambios de comportamiento respecto a Laravel
 
