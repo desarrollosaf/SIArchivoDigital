@@ -32,8 +32,8 @@
   width: 100%;
 }
 
-// Encabezado y pie de la SAF: logo institucional vigente y datos de contacto en texto (el membrete
-// anterior traía la leyenda de 2024 y el logo SAF viejo).
+// Encabezado de la SAF con el logo institucional vigente (el membrete anterior traía la leyenda de
+// 2024 y el logo SAF viejo).
 .encabezado-saf {
   display: flex;
   justify-content: center;
@@ -44,23 +44,6 @@
   img {
     height: 20mm;
     width: auto;
-  }
-}
-
-.pie-saf {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5mm 4mm;
-  margin: 0 16mm;
-  padding: 2mm 0 4mm;
-  border-top: 0.3mm solid #e2d6db;
-  font-size: 7pt;
-  color: var(--brand-primary);
-  text-align: center;
-
-  &__web {
-    font-weight: 700;
   }
 }
 

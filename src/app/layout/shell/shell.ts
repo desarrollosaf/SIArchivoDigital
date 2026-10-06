@@ -44,7 +44,8 @@ const CONSULTAS: NavItem = {
   children: [
     { label: 'Búsqueda de folios', route: '/busqueda' },
     { label: 'Agenda', route: '/agenda' },
-    { label: 'Archivo de concentración', route: '/concentracion' },
+    // Oculto por ahora (la ruta /concentracion sigue disponible).
+    // { label: 'Archivo de concentración', route: '/concentracion' },
     { label: 'Reportes', route: '/reportes' },
   ],
 };
