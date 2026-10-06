@@ -25,12 +25,12 @@
             <!-- Membrete institucional de la JUCOPO (el mismo del PDF de cumpleaños). -->
             <img class="membrete" src="assets/membrete/encabezado.jpeg" alt="" />
           } @else {
-            <header class="encabezado-saf">
-              <img
-                src="assets/congreso-saf.svg"
-                alt="Congreso del Estado de México · Secretaría de Administración y Finanzas"
-              />
-            </header>
+            <!-- Membrete oficial 2026 de la SAF (Membretes CONGRESO_2026). -->
+            <img
+              class="membrete"
+              src="assets/membrete/encabezado-saf-2026.svg"
+              alt="Congreso del Estado de México · Secretaría de Administración y Finanzas"
+            />
           }
 
           <div class="volante__cuerpo">
@@ -115,6 +115,17 @@
               </tbody>
             </table>
           </div>
+
+          @if (!presidencia) {
+            <footer class="pie-congreso">
+              <p>
+                Independencia Ote. 102, 7º piso<br />
+                Col. Centro, Toluca, Méx. C. P. 50000<br />
+                Tel. 279 64 00 y 279 65 00 Ext. 6450/6421
+              </p>
+              <span>CongresoEdomex.gob.mx</span>
+            </footer>
+          }
         </div>
       }
     </article>

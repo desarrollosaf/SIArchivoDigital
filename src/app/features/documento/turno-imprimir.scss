@@ -32,18 +32,26 @@
   width: 100%;
 }
 
-// Encabezado de la SAF con el logo institucional vigente (el membrete anterior traía la leyenda de
-// 2024 y el logo SAF viejo).
-.encabezado-saf {
+// Pie del membrete del Congreso 2026: dirección a la izquierda y sitio a la derecha.
+.pie-congreso {
   display: flex;
-  justify-content: center;
-  padding: 5mm 0 2mm;
-  border-bottom: 0.6mm solid var(--brand-primary);
-  margin: 0 16mm;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6mm;
+  padding: 2mm 16mm 4mm;
 
-  img {
-    height: 20mm;
-    width: auto;
+  p {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 6.5pt;
+    line-height: 1.25;
+    color: #555;
+  }
+
+  span {
+    font-size: 7.5pt;
+    color: #333;
+    white-space: nowrap;
   }
 }
 
