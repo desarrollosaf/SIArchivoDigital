@@ -1,0 +1,124 @@
+<section class="pagina">
+  <div class="no-imprimir acciones">
+    <a class="btn btn--outline btn--sm" [routerLink]="['/documentos', id]">Regresar</a>
+    <button
+      type="button"
+      class="btn btn--primary btn--sm"
+      [disabled]="!registro()"
+      (click)="imprimir()"
+    >
+      Imprimir / guardar PDF
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="tarjeta">
+      <p class="aviso aviso--error">{{ error() }}</p>
+    </div>
+  } @else if (!registro()) {
+    <div class="tarjeta"><p class="aviso">Generando turno…</p></div>
+  } @else if (registro(); as r) {
+    <article class="hoja">
+      @for (tanto of tantos; track tanto) {
+        <div class="volante">
+          <img
+            class="membrete"
+            [src]="
+              presidencia
+                ? 'assets/turno/encabezado-presidencia.png'
+                : 'assets/turno/encabezado-saf.png'
+            "
+            alt=""
+          />
+
+          <div class="volante__cuerpo">
+            <div class="cabecera">
+              <p class="lugar">Toluca, Estado de México; {{ fechaHoy }}</p>
+              <dl class="folio">
+                <div>
+                  <dt>Folio</dt>
+                  <dd>{{ r.folio }}</dd>
+                </div>
+                <div>
+                  <dt>Recepción</dt>
+                  <dd>{{ fechaCorta(r.fechaRecepcion) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <h1 class="titulo">
+              Control de asuntos de la
+              {{
+                presidencia
+                  ? 'Junta de Coordinación Política'
+                  : 'Secretaría de Administración y Finanzas'
+              }}
+            </h1>
+
+            <table class="datos">
+              <tbody>
+                <tr>
+                  <th>Remitente</th>
+                  <td>{{ remitente() }}</td>
+                  <th>Fecha del documento</th>
+                  <td>{{ r.fechaDocumento ? fechaCorta(r.fechaDocumento) : '—' }}</td>
+                </tr>
+                <tr>
+                  <th>Referencia</th>
+                  <td>{{ r.referenciaDocumento || '—' }}</td>
+                  <th>Tipo de envío</th>
+                  <td>{{ r.tipoAtencion.nombre }}</td>
+                </tr>
+                <tr>
+                  <th>Fecha límite de atención</th>
+                  <td colspan="3" class="destacado">{{ fechaCorta(r.fechaLimiteAtencion) }}</td>
+                </tr>
+                <tr>
+                  <th>Asunto</th>
+                  <td colspan="3">{{ r.asunto }}</td>
+                </tr>
+                <tr>
+                  <th>Indicaciones</th>
+                  <td colspan="3">{{ r.indicaciones }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h2 class="subtitulo">Turnado a</h2>
+            <table class="turnos">
+              <tbody>
+                @for (t of turnos(); track t.id) {
+                  <tr>
+                    <td>
+                      @if (t.cargo) {
+                        <small>{{ t.cargo }}</small>
+                      }
+                      <strong>{{ t.nombre || t.rfc }}</strong>
+                    </td>
+                    <td class="tipo">
+                      {{ t.tipo === 'A' ? 'Para su atención' : 'Para su conocimiento' }}
+                    </td>
+                    <td class="estado">
+                      <span [class.ok]="t.visto">{{ t.visto ? 'Visto' : 'Sin ver' }}</span>
+                      <span [class.ok]="t.atendido">{{
+                        t.atendido ? 'Atendido' : 'Pendiente'
+                      }}</span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="vacio">Sin turnos.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (!presidencia) {
+            <img class="membrete" src="assets/turno/pie-saf.png" alt="" />
+          }
+        </div>
+      }
+    </article>
+  }
+</section>

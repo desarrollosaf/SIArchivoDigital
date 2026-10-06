@@ -37,6 +37,8 @@ export interface TurnoDetalle {
   id: number;
   rfc: string;
   nombre: string | null;
+  /** "DIRECCIÓN …/PUESTO" del padrón. */
+  cargo: string | null;
   tipo: TipoTurno;
   atendido: boolean;
   visto: boolean;

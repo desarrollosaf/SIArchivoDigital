@@ -26,6 +26,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/salida/salida.routes').then((m) => m.SALIDA_ROUTES),
       },
       {
+        path: 'documentos/:id/turno',
+        loadComponent: () =>
+          import('./features/documento/turno-imprimir').then((m) => m.TurnoImprimir),
+      },
+      {
         path: 'documentos/:id',
         loadComponent: () =>
           import('./features/documento/documento-detalle').then((m) => m.DocumentoDetalle),

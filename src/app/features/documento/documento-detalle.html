@@ -47,6 +47,9 @@
             Ver documento
           </button>
         }
+        <a class="btn btn--outline btn--sm" [routerLink]="['/documentos', r.id, 'turno']">
+          Imprimir turno
+        </a>
         @if (puedeTurnar()) {
           <button type="button" class="btn btn--outline btn--sm" (click)="abrirTurnar()">
             Turnar

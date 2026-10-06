@@ -116,7 +116,8 @@ export class RegistroFormulario {
       fechaDocumento: this.fechaDocumento() || undefined,
       referenciaDocumento: this.referenciaDocumento().trim() || undefined,
       fechaLimiteAtencion: this.fechaLimite(),
-      horaInicio: this.pideHorario() ? this.horaInicio() || undefined : undefined,
+      // Hora de inicio del evento, o la hora de atención en las demás series (hora_atencion).
+      horaInicio: this.horaInicio() || undefined,
       horaTermino: this.pideHorario() ? this.horaTermino() || undefined : undefined,
       tipoAtencion: this.tipoAtencion()!,
       serieId: this.serieId()!,

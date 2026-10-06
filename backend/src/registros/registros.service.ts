@@ -195,7 +195,7 @@ export class RegistrosService {
       limit: 30,
     });
     return rows.map((r) => ({
-      id: Number(r.id),
+      id: String(r.id),
       nombre: r.folio,
       detalle: r.descripcionDoc?.slice(0, 120) ?? null,
     }));
@@ -237,10 +237,11 @@ export class RegistrosService {
         ...(c.respuestas ?? []).map((r) => r.userRfc),
       ]),
     ];
-    const [nombres, registradoPor, series] = await Promise.all([
+    const [nombres, registradoPor, series, cargos] = await Promise.all([
       this.padron.nombresPorRfc(rfcs),
       this.padron.usuariosPorId([registro.userRegistro]),
       this.catalogos.nombresSeries([registro.serieId]),
+      this.padron.cargosPorRfc(turnos.map((t) => t.userRfc)),
     ]);
     const nombre = (rfc: string | null | undefined) =>
       rfc ? (nombres.get(rfc) ?? rfc) : null;
@@ -306,6 +307,7 @@ export class RegistrosService {
         id: Number(t.id),
         rfc: t.userRfc,
         nombre: nombre(t.userRfc),
+        cargo: cargos.get(t.userRfc) ?? null,
         tipo: t.tipoAtencion,
         atendido: !!t.statusAtencion,
         visto: !!t.visto,

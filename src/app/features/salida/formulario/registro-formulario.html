@@ -241,6 +241,17 @@
               (ngModelChange)="nombreEvento.set($event)"
             />
           </div>
+        } @else {
+          <!-- Como en Laravel: las series sin horario de evento solo piden la hora de atención. -->
+          <div class="campo">
+            <label for="f-hora">Hora de atención</label>
+            <input
+              id="f-hora"
+              type="time"
+              [ngModel]="horaInicio()"
+              (ngModelChange)="horaInicio.set($event)"
+            />
+          </div>
         }
       </div>
     </div>

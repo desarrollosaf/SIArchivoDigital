@@ -5,6 +5,7 @@ import { SUsuario } from '../database/models/s-usuario.model';
 import { SUsers } from '../database/models/s-users.model';
 import { UsersSafs } from '../database/models/users-safs.model';
 import { TDepartamento } from '../database/models/t-departamento.model';
+import { TDireccion } from '../database/models/t-direccion.model';
 
 export interface PerfilServidor {
   rfc: string;
@@ -55,6 +56,8 @@ export class PadronService {
     private readonly usersSafsModel: typeof UsersSafs,
     @InjectModel(TDepartamento, 'external')
     private readonly departamentoModel: typeof TDepartamento,
+    @InjectModel(TDireccion, 'external')
+    private readonly direccionModel: typeof TDireccion,
   ) {}
 
   /**
@@ -167,6 +170,42 @@ export class PadronService {
     });
     for (const p of personas) {
       resultado.set(p.N_Usuario, nombreCompleto(p));
+    }
+    return resultado;
+  }
+
+  /** Cargo como lo imprimía el turno de Laravel: "DIRECCIÓN …/PUESTO" (o solo el puesto). */
+  async cargosPorRfc(rfcs: string[]): Promise<Map<string, string>> {
+    const resultado = new Map<string, string>();
+    const unicos = [...new Set(rfcs.filter(Boolean))];
+    if (unicos.length === 0) return resultado;
+
+    const personas = await this.sUsuarioModel.findAll({
+      attributes: ['N_Usuario', 'Puesto', 'id_Direccion'],
+      where: { N_Usuario: { [Op.in]: unicos } },
+    });
+    const idsDireccion = [
+      ...new Set(
+        personas.map((p) => p.id_Direccion).filter((id) => id != null),
+      ),
+    ];
+    const direcciones = idsDireccion.length
+      ? await this.direccionModel.findAll({
+          attributes: ['id_Direccion', 'Nombre', 'nombre_completo'],
+          where: { id_Direccion: { [Op.in]: idsDireccion } },
+        })
+      : [];
+    const nombreDireccion = new Map(
+      direcciones.map((d) => [
+        d.id_Direccion,
+        (d.nombre_completo ?? d.Nombre)?.trim(),
+      ]),
+    );
+    for (const p of personas) {
+      const cargo = [nombreDireccion.get(p.id_Direccion), p.Puesto?.trim()]
+        .filter(Boolean)
+        .join('/');
+      if (cargo) resultado.set(p.N_Usuario, cargo);
     }
     return resultado;
   }
