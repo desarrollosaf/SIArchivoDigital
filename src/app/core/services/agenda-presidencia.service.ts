@@ -149,6 +149,8 @@ export interface CatalogosLegislativos {
 export interface EventoLegislativo {
   id: number;
   fechaEvento: string;
+  /** Último día de un evento de varios días; null = un solo día. */
+  fechaFin: string | null;
   horaInicio: string | null;
   horaTermino: string | null;
   tipoEvento: { id: number; nombre: string | null };
@@ -163,6 +165,7 @@ export interface EventoLegislativo {
 
 export interface EventoLegislativoPayload {
   fechaEvento: string;
+  fechaFin: string | null;
   horaInicio: string;
   horaTermino: string;
   tipoEvento: number;
@@ -200,9 +203,10 @@ export class EventosLegislativosService {
     termino: string,
     sede: number,
     excluir: number | null,
+    hasta: string | null = null,
   ): Observable<Disponibilidad> {
     return this.http.get<Disponibilidad>(`${LEGISLATIVOS}/disponibilidad`, {
-      params: parametros({ fecha, inicio, termino, sede, excluir }),
+      params: parametros({ fecha, inicio, termino, sede, excluir, hasta }),
     });
   }
 

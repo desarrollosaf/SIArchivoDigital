@@ -47,6 +47,10 @@ export class RegistroPresidencia extends Model {
   @Column({ type: DataType.DATEONLY, allowNull: true, field: 'fecha_evento' })
   declare fechaEvento: string;
 
+  /** Último día de un evento de varios días; null = solo `fechaEvento`. */
+  @Column({ type: DataType.DATEONLY, allowNull: true, field: 'fecha_fin' })
+  declare fechaFin: string | null;
+
   @Column({ type: DataType.TIME, allowNull: true, field: 'hora_inicio' })
   declare horaInicio: string;
 

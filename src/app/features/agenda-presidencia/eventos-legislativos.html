@@ -48,7 +48,12 @@
           <tbody>
             @for (e of eventos(); track e.id) {
               <tr>
-                <td class="nowrap">{{ fechaCorta(e.fechaEvento) }}</td>
+                <td class="nowrap">
+                  {{ fechas(e) }}
+                  @if (e.fechaFin && e.fechaFin !== e.fechaEvento) {
+                    <small>Diario, mismo horario</small>
+                  }
+                </td>
                 <td class="nowrap">{{ e.horaInicio }}–{{ e.horaTermino }}</td>
                 <td>
                   <strong>{{ e.tipoEvento.nombre }}</strong>
@@ -109,6 +114,17 @@
             [ngModel]="f.fechaEvento"
             (ngModelChange)="actualizar({ fechaEvento: $event })"
           />
+        </div>
+        <div class="campo">
+          <label for="l-fecha-fin">Fecha final <small class="opcional">(varios días)</small></label>
+          <input
+            id="l-fecha-fin"
+            type="date"
+            [min]="f.fechaEvento"
+            [ngModel]="f.fechaFin"
+            (ngModelChange)="actualizar({ fechaFin: $event })"
+          />
+          <span class="campo__ayuda">Se agenda cada día, en el mismo horario y sede.</span>
         </div>
         <div class="campo">
           <label for="l-inicio">Hora de inicio <span class="obligatorio">*</span></label>

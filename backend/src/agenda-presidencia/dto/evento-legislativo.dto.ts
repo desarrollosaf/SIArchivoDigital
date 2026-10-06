@@ -17,6 +17,11 @@ export class EventoLegislativoDto {
   @IsDateString({}, { message: 'La fecha del evento no es válida' })
   fechaEvento!: string;
 
+  /** Último día si el evento se repite varios días (mismo horario y sede); vacío = un día. */
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha final no es válida' })
+  fechaFin?: string | null;
+
   @Matches(HORA, { message: 'La hora de inicio no es válida' })
   horaInicio!: string;
 

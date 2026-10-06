@@ -30,6 +30,26 @@ function hora(valor: string): string {
   return valor.length === 5 ? `${valor}:00` : valor.slice(0, 8);
 }
 
+/** Un evento puede repetirse, como máximo, este número de días. */
+const MAX_DIAS_EVENTO = 31;
+
+/** Días de `desde` a `hasta` (YYYY-MM-DD), ambos incluidos. */
+export function diasDelRango(desde: string, hasta: string): string[] {
+  const dias: string[] = [];
+  const [a, m, d] = desde.split('-').map(Number);
+  for (let i = 0; i <= 366; i++) {
+    const dia = new Date(Date.UTC(a, m - 1, d + i)).toISOString().slice(0, 10);
+    if (dia > hasta) break;
+    dias.push(dia);
+  }
+  return dias;
+}
+
+/** "2026-10-06" -> "06/10". */
+function diaCorto(fecha: string): string {
+  return `${fecha.slice(8, 10)}/${fecha.slice(5, 7)}`;
+}
+
 /**
  * Captura de eventos legislativos de Presidencia (en Laravel: RegistroPresidencia). Cada evento
  * vive en `registro_presidencia`, sus comisiones en `comision_registro` y su entrada de agenda en
@@ -102,8 +122,9 @@ export class EventosLegislativosService {
   }
 
   /**
-   * ¿La sede está libre en ese horario? Revisa, como Laravel, otros eventos legislativos y los
-   * documentos activos con sede (serie EVENTOS) del mismo día que se traslapen.
+   * ¿La sede está libre en ese horario todos los días de `fecha` a `hasta`? Revisa, como Laravel,
+   * otros eventos legislativos (también los de varios días) y los documentos activos con sede
+   * (serie EVENTOS) que se traslapen. En un rango, cada conflicto indica el día.
    */
   async disponibilidad(
     fecha: string,
@@ -111,9 +132,12 @@ export class EventosLegislativosService {
     termino: string,
     sede: number,
     excluirId?: number,
+    hasta?: string | null,
   ) {
+    const fin = hasta && hasta > fecha ? hasta : fecha;
     const replacements = {
-      fecha,
+      desde: fecha,
+      hasta: fin,
       inicio: hora(inicio),
       termino: hora(termino),
       sede,
@@ -121,28 +145,42 @@ export class EventosLegislativosService {
     };
     const conflictos = await this.eventoModel.sequelize!.query<{
       descripcion: string;
+      desde: string;
+      hasta: string;
       horaInicio: string;
       horaTermino: string;
     }>(
       `SELECT COALESCE(rp.nombre_evento, te.tipo) AS descripcion,
+          DATE_FORMAT(GREATEST(rp.fecha_evento, :desde), '%Y-%m-%d') AS desde,
+          DATE_FORMAT(LEAST(COALESCE(rp.fecha_fin, rp.fecha_evento), :hasta), '%Y-%m-%d') AS hasta,
           rp.hora_inicio AS horaInicio, rp.hora_termino AS horaTermino
         FROM registro_presidencia rp
         LEFT JOIN tipo_evento te ON te.id = rp.tipo_evento
-        WHERE rp.STATUS = 1 AND rp.fecha_evento = :fecha AND rp.sede = :sede AND rp.id <> :excluir
+        WHERE rp.STATUS = 1 AND rp.sede = :sede AND rp.id <> :excluir
+          AND rp.fecha_evento <= :hasta AND COALESCE(rp.fecha_fin, rp.fecha_evento) >= :desde
           AND rp.hora_inicio < :termino AND rp.hora_termino > :inicio
        UNION ALL
        SELECT CONCAT(r.folio, ' ', COALESCE(r.nombre_evento, '')) AS descripcion,
+          DATE_FORMAT(r.fecha_limite_atencion, '%Y-%m-%d') AS desde,
+          DATE_FORMAT(r.fecha_limite_atencion, '%Y-%m-%d') AS hasta,
           r.hora_atencion AS horaInicio, r.hora_termino AS horaTermino
         FROM registro r
-        WHERE r.activo = 1 AND r.fecha_limite_atencion = :fecha AND r.salon = :sede
-          AND r.hora_atencion < :termino AND r.hora_termino > :inicio`,
+        WHERE r.activo = 1 AND r.fecha_limite_atencion BETWEEN :desde AND :hasta AND r.salon = :sede
+          AND r.hora_atencion < :termino AND r.hora_termino > :inicio
+       ORDER BY desde, horaInicio`,
       { type: QueryTypes.SELECT, replacements },
     );
+    const dias = (c: { desde: string; hasta: string }) =>
+      fin === fecha
+        ? ''
+        : c.desde === c.hasta
+          ? `${diaCorto(c.desde)} `
+          : `${diaCorto(c.desde)} al ${diaCorto(c.hasta)} `;
     return {
       disponible: conflictos.length === 0,
       conflictos: conflictos.map((c) => ({
         descripcion: c.descripcion.trim(),
-        horario: `${c.horaInicio?.slice(0, 5)}–${c.horaTermino?.slice(0, 5)}`,
+        horario: `${dias(c)}${c.horaInicio?.slice(0, 5)}–${c.horaTermino?.slice(0, 5)}`,
       })),
     };
   }
@@ -223,6 +261,25 @@ export class EventosLegislativosService {
       );
     }
 
+    const fechaEvento = dto.fechaEvento.slice(0, 10);
+    const fechaFin =
+      dto.fechaFin && dto.fechaFin.slice(0, 10) !== fechaEvento
+        ? dto.fechaFin.slice(0, 10)
+        : null;
+    if (fechaFin && fechaFin < fechaEvento) {
+      throw new BadRequestException(
+        'La fecha final no puede ser anterior a la fecha del evento.',
+      );
+    }
+    if (
+      fechaFin &&
+      diasDelRango(fechaEvento, fechaFin).length > MAX_DIAS_EVENTO
+    ) {
+      throw new BadRequestException(
+        `Un evento puede repetirse como máximo ${MAX_DIAS_EVENTO} días.`,
+      );
+    }
+
     const esComision = dto.tipoEvento === TIPO_EVENTO_COMISION;
     const llevaMateria =
       esComision ||
@@ -261,7 +318,8 @@ export class EventosLegislativosService {
     }
 
     return {
-      fechaEvento: dto.fechaEvento.slice(0, 10),
+      fechaEvento,
+      fechaFin,
       horaInicio: hora(dto.horaInicio),
       horaTermino: hora(dto.horaTermino),
       tipoEvento: dto.tipoEvento,
@@ -281,6 +339,7 @@ export class EventosLegislativosService {
       dto.horaTermino,
       dto.sede,
       excluirId,
+      dto.fechaFin?.slice(0, 10) ?? null,
     );
     if (!disponible) {
       const detalle = conflictos
@@ -304,7 +363,7 @@ export class EventosLegislativosService {
     );
   }
 
-  /** Una entrada de agenda por evento; `start`/`end` en UTC (la hora capturada es de México). */
+  /** Entradas de agenda del evento; `start`/`end` en UTC (la hora capturada es de México). */
   private async sincronizarAgenda(
     evento: RegistroPresidencia,
     transaction: Transaction,
@@ -316,22 +375,28 @@ export class EventosLegislativosService {
       'DELETE FROM agenda_presidencia WHERE registroP_id = :id AND registro_id IS NULL',
       { replacements: { id: evento.id }, transaction },
     );
-    await this.eventoModel.sequelize!.query(
-      'INSERT INTO agenda_presidencia ' +
-        '(registroP_id, title, `start`, `end`, empieza, termina, status, created_at, updated_at) ' +
-        "VALUES (:id, :titulo, CONVERT_TZ(:inicio, '-06:00', '+00:00'), " +
-        "CONVERT_TZ(:fin, '-06:00', '+00:00'), :fecha, :fecha, 1, NOW(), NOW())",
-      {
-        replacements: {
-          id: evento.id,
-          titulo: tipo?.tipo ?? 'Evento',
-          inicio: `${evento.fechaEvento} ${evento.horaInicio}`,
-          fin: `${evento.fechaEvento} ${evento.horaTermino}`,
-          fecha: evento.fechaEvento,
+    // Un evento de varios días aparece en la agenda cada día del rango, con el mismo horario.
+    for (const fecha of diasDelRango(
+      evento.fechaEvento,
+      evento.fechaFin ?? evento.fechaEvento,
+    )) {
+      await this.eventoModel.sequelize!.query(
+        'INSERT INTO agenda_presidencia ' +
+          '(registroP_id, title, `start`, `end`, empieza, termina, status, created_at, updated_at) ' +
+          "VALUES (:id, :titulo, CONVERT_TZ(:inicio, '-06:00', '+00:00'), " +
+          "CONVERT_TZ(:fin, '-06:00', '+00:00'), :fecha, :fecha, 1, NOW(), NOW())",
+        {
+          replacements: {
+            id: evento.id,
+            titulo: tipo?.tipo ?? 'Evento',
+            inicio: `${fecha} ${evento.horaInicio}`,
+            fin: `${fecha} ${evento.horaTermino}`,
+            fecha,
+          },
+          transaction,
         },
-        transaction,
-      },
-    );
+      );
+    }
   }
 
   private async aVistas(eventos: RegistroPresidencia[]) {
@@ -359,6 +424,7 @@ export class EventosLegislativosService {
     return eventos.map((e) => ({
       id: e.id,
       fechaEvento: e.fechaEvento,
+      fechaFin: e.fechaFin,
       horaInicio: e.horaInicio?.slice(0, 5) ?? null,
       horaTermino: e.horaTermino?.slice(0, 5) ?? null,
       tipoEvento: {

@@ -25,6 +25,8 @@ const TIPO_COMPARECENCIA = 3;
 interface Formulario {
   id: number | null;
   fechaEvento: string;
+  /** Opcional: si se indica, el evento se repite cada día hasta esta fecha. */
+  fechaFin: string;
   horaInicio: string;
   horaTermino: string;
   tipoEvento: number | null;
@@ -40,6 +42,7 @@ function vacio(): Formulario {
   return {
     id: null,
     fechaEvento: fechaHoyMexico(),
+    fechaFin: '',
     horaInicio: '',
     horaTermino: '',
     tipoEvento: null,
@@ -120,6 +123,7 @@ export class EventosLegislativos {
             f.horaTermino,
             f.sede!,
             f.id,
+            f.fechaFin || null,
           ),
         ),
         takeUntilDestroyed(),
@@ -128,6 +132,13 @@ export class EventosLegislativos {
         next: (d) => this.disponibilidad.set(d),
         error: () => this.disponibilidad.set(null),
       });
+  }
+
+  /** "06/10/2026" o "12/10/2026 al 16/10/2026". */
+  fechas(e: EventoLegislativo): string {
+    return e.fechaFin && e.fechaFin !== e.fechaEvento
+      ? `${fechaCorta(e.fechaEvento)} al ${fechaCorta(e.fechaFin)}`
+      : fechaCorta(e.fechaEvento);
   }
 
   cambiarAnio(anio: number): void {
@@ -145,6 +156,7 @@ export class EventosLegislativos {
     this.formulario.set({
       id: e.id,
       fechaEvento: e.fechaEvento,
+      fechaFin: e.fechaFin ?? '',
       horaInicio: e.horaInicio ?? '',
       horaTermino: e.horaTermino ?? '',
       tipoEvento: e.tipoEvento.id,
@@ -160,7 +172,9 @@ export class EventosLegislativos {
 
   actualizar(cambios: Partial<Formulario>): void {
     this.formulario.update((f) => (f ? { ...f, ...cambios } : f));
-    if (['fechaEvento', 'horaInicio', 'horaTermino', 'sede'].some((k) => k in cambios)) {
+    if (
+      ['fechaEvento', 'fechaFin', 'horaInicio', 'horaTermino', 'sede'].some((k) => k in cambios)
+    ) {
       this.revisar();
     }
   }
@@ -177,6 +191,7 @@ export class EventosLegislativos {
     this.eventosService
       .guardar(f.id, {
         fechaEvento: f.fechaEvento,
+        fechaFin: f.fechaFin && f.fechaFin !== f.fechaEvento ? f.fechaFin : null,
         horaInicio: f.horaInicio,
         horaTermino: f.horaTermino,
         tipoEvento: f.tipoEvento!,
@@ -236,6 +251,9 @@ export class EventosLegislativos {
   }
 
   private faltantes(f: Formulario): string | null {
+    if (f.fechaFin && f.fechaFin < f.fechaEvento) {
+      return 'La fecha final no puede ser anterior a la fecha del evento.';
+    }
     if (!f.fechaEvento || !f.horaInicio || !f.horaTermino) return 'Indica la fecha y el horario.';
     if (f.horaTermino <= f.horaInicio)
       return 'La hora de término debe ser posterior a la de inicio.';

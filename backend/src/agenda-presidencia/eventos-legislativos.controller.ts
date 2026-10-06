@@ -46,6 +46,7 @@ export class EventosLegislativosController {
     @Query('termino') termino: string,
     @Query('sede') sede: string,
     @Query('excluir') excluir?: string,
+    @Query('hasta') hasta?: string,
   ) {
     if (!FECHA.test(fecha ?? '') || !inicio || !termino || !Number(sede)) {
       throw new BadRequestException('Indica fecha, horario y sede');
@@ -56,6 +57,7 @@ export class EventosLegislativosController {
       termino,
       Number(sede),
       excluir ? Number(excluir) : undefined,
+      hasta && FECHA.test(hasta) ? hasta : null,
     );
   }
 
