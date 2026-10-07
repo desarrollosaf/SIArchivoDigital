@@ -10,6 +10,7 @@ import {
   Disponibilidad,
   EventoLegislativo,
   EventosLegislativosService,
+  Reprogramacion,
 } from '../../core/services/agenda-presidencia.service';
 import { Persona } from '../../core/services/catalogos.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -53,6 +54,17 @@ function vacio(): Formulario {
     materia: '',
     comisiones: [],
   };
+}
+
+/** Reprogramación en captura: nueva fecha (y horario/sede si cambian) y el motivo u oficio. */
+interface FormReprogramar {
+  evento: EventoLegislativo;
+  fechaEvento: string;
+  fechaFin: string;
+  horaInicio: string;
+  horaTermino: string;
+  sede: number;
+  motivo: string;
 }
 
 function mensajeError(err: HttpErrorResponse, porDefecto: string): string {
@@ -100,7 +112,11 @@ export class EventosLegislativos {
     return tipo === TIPO_COMISION || tipo === TIPO_COMPARECENCIA;
   });
 
+  protected readonly reprogramando = signal<FormReprogramar | null>(null);
+  protected readonly dispReprogramar = signal<Disponibilidad | null>(null);
+
   private readonly revisarSede$ = new Subject<Formulario>();
+  private readonly revisarReprogramar$ = new Subject<FormReprogramar>();
 
   constructor(
     private readonly eventosService: EventosLegislativosService,
@@ -132,6 +148,26 @@ export class EventosLegislativos {
         next: (d) => this.disponibilidad.set(d),
         error: () => this.disponibilidad.set(null),
       });
+
+    this.revisarReprogramar$
+      .pipe(
+        debounceTime(300),
+        switchMap((r) =>
+          this.eventosService.disponibilidad(
+            r.fechaEvento,
+            r.horaInicio,
+            r.horaTermino,
+            r.sede,
+            r.evento.id,
+            r.fechaFin || null,
+          ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe({
+        next: (d) => this.dispReprogramar.set(d),
+        error: () => this.dispReprogramar.set(null),
+      });
   }
 
   /** "06/10/2026" o "12/10/2026 al 16/10/2026". */
@@ -139,6 +175,80 @@ export class EventosLegislativos {
     return e.fechaFin && e.fechaFin !== e.fechaEvento
       ? `${fechaCorta(e.fechaEvento)} al ${fechaCorta(e.fechaFin)}`
       : fechaCorta(e.fechaEvento);
+  }
+
+  /** "14/10/2026 (10:00–12:00, Salón de Protocolos)". */
+  antes(r: Reprogramacion): string {
+    const fecha =
+      r.fechaFinAnterior && r.fechaFinAnterior !== r.fechaAnterior
+        ? `${fechaCorta(r.fechaAnterior)} al ${fechaCorta(r.fechaFinAnterior)}`
+        : fechaCorta(r.fechaAnterior);
+    const detalle = [
+      r.horaInicioAnterior ? `${r.horaInicioAnterior}–${r.horaTerminoAnterior}` : null,
+      r.sedeAnterior,
+    ].filter(Boolean);
+    return detalle.length ? `${fecha} (${detalle.join(', ')})` : fecha;
+  }
+
+  reprogramar(e: EventoLegislativo): void {
+    this.dispReprogramar.set(null);
+    this.reprogramando.set({
+      evento: e,
+      fechaEvento: '',
+      fechaFin: '',
+      horaInicio: e.horaInicio ?? '',
+      horaTermino: e.horaTermino ?? '',
+      sede: e.sede.id,
+      motivo: '',
+    });
+  }
+
+  actualizarReprogramar(cambios: Partial<FormReprogramar>): void {
+    this.reprogramando.update((r) => (r ? { ...r, ...cambios } : r));
+    const r = this.reprogramando();
+    if (r?.fechaEvento && r.horaInicio && r.horaTermino && r.horaTermino > r.horaInicio) {
+      this.revisarReprogramar$.next(r);
+    } else {
+      this.dispReprogramar.set(null);
+    }
+  }
+
+  guardarReprogramacion(): void {
+    const r = this.reprogramando();
+    if (!r) return;
+    if (!r.fechaEvento) return this.toastService.error('Indica la nueva fecha.');
+    if (r.fechaEvento < this.hoy)
+      return this.toastService.error('La nueva fecha no puede ser anterior a hoy.');
+    if (r.fechaFin && r.fechaFin < r.fechaEvento)
+      return this.toastService.error('La fecha final no puede ser anterior a la nueva fecha.');
+    if (!r.horaInicio || !r.horaTermino || r.horaTermino <= r.horaInicio)
+      return this.toastService.error('Revisa el horario: el término debe ser posterior al inicio.');
+    if (!r.motivo.trim())
+      return this.toastService.error('Indica el motivo u oficio de la reprogramación.');
+    if (this.dispReprogramar()?.disponible === false)
+      return this.toastService.error('La sede no está disponible en la nueva fecha.');
+    this.guardando.set(true);
+    this.eventosService
+      .reprogramar(r.evento.id, {
+        fechaEvento: r.fechaEvento,
+        fechaFin: r.fechaFin && r.fechaFin !== r.fechaEvento ? r.fechaFin : null,
+        horaInicio: r.horaInicio,
+        horaTermino: r.horaTermino,
+        sede: r.sede,
+        motivo: r.motivo.trim(),
+      })
+      .subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.reprogramando.set(null);
+          this.toastService.success(`Evento reprogramado al ${fechaCorta(r.fechaEvento)}.`);
+          this.cargar();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.toastService.error(mensajeError(err, 'No se pudo reprogramar el evento.'));
+        },
+      });
   }
 
   cambiarAnio(anio: number): void {

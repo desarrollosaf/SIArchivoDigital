@@ -53,6 +53,19 @@
                   @if (e.fechaFin && e.fechaFin !== e.fechaEvento) {
                     <small>Diario, mismo horario</small>
                   }
+                  @if (e.reprogramaciones.length; as n) {
+                    <span
+                      class="reprogramado"
+                      [title]="
+                        'Antes: ' +
+                        antes(e.reprogramaciones[0]) +
+                        ' · ' +
+                        e.reprogramaciones[0].motivo
+                      "
+                      >Reprogramado{{ n > 1 ? ' (' + n + ')' : '' }}</span
+                    >
+                    <small>Antes: {{ fechaCorta(e.reprogramaciones[0].fechaAnterior) }}</small>
+                  }
                 </td>
                 <td class="nowrap">{{ e.horaInicio }}–{{ e.horaTermino }}</td>
                 <td>
@@ -86,6 +99,7 @@
                 </td>
                 <td class="acciones">
                   <button type="button" class="enlace" (click)="editar(e)">Editar</button>
+                  <button type="button" class="enlace" (click)="reprogramar(e)">Reprogramar</button>
                   <button type="button" class="enlace enlace--peligro" (click)="eliminar(e)">
                     Eliminar
                   </button>
@@ -258,6 +272,137 @@
         </button>
         <button type="button" class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
           {{ guardando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+
+  @if (reprogramando(); as r) {
+    <app-modal titulo="Reprogramar evento" ancho="ancho" (cerrar)="reprogramando.set(null)">
+      <div class="resumen-evento">
+        <strong>{{ r.evento.nombreEvento || r.evento.tipoEvento.nombre }}</strong>
+        <span
+          >Actualmente: {{ fechas(r.evento) }} · {{ r.evento.horaInicio }}–{{
+            r.evento.horaTermino
+          }}
+          · {{ r.evento.sede.nombre }}</span
+        >
+      </div>
+
+      <div class="formulario formulario--3">
+        <div class="campo">
+          <label for="r-fecha">Nueva fecha <span class="obligatorio">*</span></label>
+          <input
+            id="r-fecha"
+            type="date"
+            [min]="hoy"
+            [ngModel]="r.fechaEvento"
+            (ngModelChange)="actualizarReprogramar({ fechaEvento: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="r-fecha-fin">Fecha final <small class="opcional">(varios días)</small></label>
+          <input
+            id="r-fecha-fin"
+            type="date"
+            [min]="r.fechaEvento || hoy"
+            [ngModel]="r.fechaFin"
+            (ngModelChange)="actualizarReprogramar({ fechaFin: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="r-sede">Sede</label>
+          <select
+            id="r-sede"
+            [class.is-invalid]="dispReprogramar()?.disponible === false"
+            [ngModel]="r.sede"
+            (ngModelChange)="actualizarReprogramar({ sede: $event })"
+          >
+            @for (s of catalogos()?.sedes ?? []; track s.id) {
+              <option [ngValue]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="r-inicio">Hora de inicio</label>
+          <input
+            id="r-inicio"
+            type="time"
+            [ngModel]="r.horaInicio"
+            (ngModelChange)="actualizarReprogramar({ horaInicio: $event })"
+          />
+        </div>
+        <div class="campo">
+          <label for="r-termino">Hora de término</label>
+          <input
+            id="r-termino"
+            type="time"
+            [ngModel]="r.horaTermino"
+            (ngModelChange)="actualizarReprogramar({ horaTermino: $event })"
+          />
+        </div>
+        <span class="campo__ayuda nota-horario"
+          >El horario y la sede se conservan; cámbialos solo si el oficio lo indica.</span
+        >
+
+        @if (dispReprogramar(); as d) {
+          <div class="campo campo--completo">
+            @if (d.disponible) {
+              <p class="sede-libre">✓ La sede está libre en la nueva fecha.</p>
+            } @else {
+              <p class="aviso aviso--error aviso--caja">
+                La sede no está disponible en la nueva fecha:
+                @for (c of d.conflictos; track $index) {
+                  <br />{{ c.horario }} · {{ c.descripcion }}
+                }
+              </p>
+            }
+          </div>
+        }
+
+        <div class="campo campo--completo">
+          <label for="r-motivo">Motivo u oficio <span class="obligatorio">*</span></label>
+          <textarea
+            id="r-motivo"
+            rows="3"
+            maxlength="1000"
+            placeholder="Ej. Oficio LXII/PJH/359/2026: informa la reprogramación de la capacitación."
+            [ngModel]="r.motivo"
+            (ngModelChange)="actualizarReprogramar({ motivo: $event })"
+          ></textarea>
+        </div>
+      </div>
+
+      @if (r.evento.reprogramaciones.length) {
+        <div class="historial">
+          <h3>Reprogramaciones anteriores</h3>
+          <ul>
+            @for (h of r.evento.reprogramaciones; track $index) {
+              <li>
+                <b>{{ antes(h) }}</b> → {{ fechaCorta(h.fechaNueva) }}
+                <small
+                  >{{ h.motivo }}
+                  @if (h.por) {
+                    · {{ h.por }}
+                  }
+                </small>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="acciones-formulario">
+        <button type="button" class="btn btn--outline" (click)="reprogramando.set(null)">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="guardando()"
+          (click)="guardarReprogramacion()"
+        >
+          {{ guardando() ? 'Guardando…' : 'Reprogramar' }}
         </button>
       </div>
     </app-modal>

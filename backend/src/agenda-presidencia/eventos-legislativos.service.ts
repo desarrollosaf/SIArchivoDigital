@@ -24,7 +24,11 @@ import { UsuarioActual } from '../common/usuario-actual';
 import { fechaHoyMexico } from '../common/fecha-mexico.util';
 import { caracteresNoLatin1 } from '../common/latin1.util';
 import { AgendaPresidenciaService } from './agenda-presidencia.service';
-import { EventoLegislativoDto } from './dto/evento-legislativo.dto';
+import {
+  EventoLegislativoDto,
+  ReprogramarEventoDto,
+} from './dto/evento-legislativo.dto';
+import { EventoReprogramacion } from '../database/models/evento-reprogramacion.model';
 
 function hora(valor: string): string {
   return valor.length === 5 ? `${valor}:00` : valor.slice(0, 8);
@@ -62,6 +66,8 @@ export class EventosLegislativosService {
     private readonly eventoModel: typeof RegistroPresidencia,
     @InjectModel(ComisionRegistro)
     private readonly comisionRegistroModel: typeof ComisionRegistro,
+    @InjectModel(EventoReprogramacion)
+    private readonly reprogramacionModel: typeof EventoReprogramacion,
     @InjectModel(TipoEvento)
     private readonly tipoEventoModel: typeof TipoEvento,
     @InjectModel(TipoReunion)
@@ -235,6 +241,121 @@ export class EventosLegislativosService {
     });
   }
 
+  /**
+   * Cambia la fecha (y, si se indica, horario y sede) de un evento y deja constancia en el
+   * historial: la agenda del día original indicará a qué fecha pasó.
+   */
+  async reprogramar(
+    id: number,
+    dto: ReprogramarEventoDto,
+    usuario: UsuarioActual,
+  ) {
+    const evento = await this.eventoModel.findByPk(id);
+    if (!evento) throw new NotFoundException('El evento no existe');
+
+    const fechaEvento = dto.fechaEvento.slice(0, 10);
+    // Si el evento era de varios días y no se indica nueva fecha final, conserva su duración.
+    const duracion = evento.fechaFin
+      ? diasDelRango(evento.fechaEvento, evento.fechaFin).length - 1
+      : 0;
+    const fechaFinPedida =
+      dto.fechaFin === undefined
+        ? duracion
+          ? diasDelRango(fechaEvento, '9999-12-31')[duracion]
+          : null
+        : dto.fechaFin?.slice(0, 10) || null;
+    const fechaFin =
+      fechaFinPedida && fechaFinPedida !== fechaEvento ? fechaFinPedida : null;
+    const horaInicio = dto.horaInicio
+      ? hora(dto.horaInicio)
+      : evento.horaInicio;
+    const horaTermino = dto.horaTermino
+      ? hora(dto.horaTermino)
+      : evento.horaTermino;
+    const sede = dto.sede ?? evento.sede;
+    const motivo = dto.motivo.trim();
+
+    if (fechaEvento < fechaHoyMexico()) {
+      throw new BadRequestException(
+        'La nueva fecha no puede ser anterior a hoy.',
+      );
+    }
+    if (fechaFin && fechaFin < fechaEvento) {
+      throw new BadRequestException(
+        'La fecha final no puede ser anterior a la nueva fecha.',
+      );
+    }
+    if (
+      fechaFin &&
+      diasDelRango(fechaEvento, fechaFin).length > MAX_DIAS_EVENTO
+    ) {
+      throw new BadRequestException(
+        `Un evento puede repetirse como máximo ${MAX_DIAS_EVENTO} días.`,
+      );
+    }
+    if (horaTermino <= horaInicio) {
+      throw new BadRequestException(
+        'La hora de término debe ser posterior a la de inicio.',
+      );
+    }
+    if (
+      fechaEvento === evento.fechaEvento &&
+      (fechaFin ?? null) === (evento.fechaFin ?? null) &&
+      horaInicio === evento.horaInicio &&
+      horaTermino === evento.horaTermino &&
+      sede === evento.sede
+    ) {
+      throw new BadRequestException(
+        'La reprogramación debe cambiar la fecha, el horario o la sede.',
+      );
+    }
+    const noPermitidos = caracteresNoLatin1(motivo);
+    if (noPermitidos.length) {
+      throw new BadRequestException(
+        `El motivo tiene caracteres que no se pueden guardar: ${noPermitidos.join(' ')}`,
+      );
+    }
+
+    const { disponible, conflictos } = await this.disponibilidad(
+      fechaEvento,
+      horaInicio,
+      horaTermino,
+      sede,
+      id,
+      fechaFin,
+    );
+    if (!disponible) {
+      throw new ConflictException(
+        `La sede no está disponible en la nueva fecha (${conflictos
+          .map((c) => `${c.horario} ${c.descripcion}`)
+          .join('; ')}).`,
+      );
+    }
+
+    await this.eventoModel.sequelize!.transaction(async (transaction) => {
+      await this.reprogramacionModel.create(
+        {
+          registroPId: id,
+          fechaAnterior: evento.fechaEvento,
+          fechaFinAnterior: evento.fechaFin,
+          horaInicioAnterior: evento.horaInicio,
+          horaTerminoAnterior: evento.horaTermino,
+          sedeAnterior: evento.sede,
+          fechaNueva: fechaEvento,
+          motivo,
+          userRfc: usuario.rfc,
+        },
+        { transaction },
+      );
+      await evento.update(
+        { fechaEvento, fechaFin, horaInicio, horaTermino, sede },
+        { transaction },
+      );
+      await this.sincronizarAgenda(evento, transaction);
+    });
+    return this.obtener(id);
+  }
+
   async eliminar(id: number) {
     const evento = await this.eventoModel.findByPk(id);
     if (!evento) throw new NotFoundException('El evento no existe');
@@ -245,6 +366,10 @@ export class EventosLegislativosService {
       );
       await this.comisionRegistroModel.destroy({
         where: { idRegistroP: id },
+        transaction,
+      });
+      await this.reprogramacionModel.destroy({
+        where: { registroPId: id },
         transaction,
       });
       await evento.destroy({ transaction });
@@ -403,6 +528,12 @@ export class EventosLegislativosService {
     const idsComisiones = eventos.flatMap((e) =>
       (e.comisiones ?? []).map((c) => c.idComision),
     );
+    const historial = eventos.length
+      ? await this.reprogramacionModel.findAll({
+          where: { registroPId: eventos.map((e) => e.id) },
+          order: [['createdAt', 'DESC']],
+        })
+      : [];
     const [tipos, reuniones, modalidades, sedes, nombresComision, capturistas] =
       await Promise.all([
         this.tipoEventoModel.findAll(),
@@ -410,7 +541,10 @@ export class EventosLegislativosService {
         this.modalidadModel.findAll(),
         this.agenda.sedes(),
         this.agenda.nombresComisiones(idsComisiones),
-        this.padron.nombresPorRfc(eventos.map((e) => e.userRegistro ?? '')),
+        this.padron.nombresPorRfc([
+          ...eventos.map((e) => e.userRegistro ?? ''),
+          ...historial.map((h) => h.userRfc ?? ''),
+        ]),
       ]);
     const nombre = <T extends { id: number }>(
       lista: T[],
@@ -452,6 +586,21 @@ export class EventosLegislativosService {
       capturo: e.userRegistro
         ? (capturistas.get(e.userRegistro) ?? e.userRegistro)
         : null,
+      // La más reciente primero.
+      reprogramaciones: historial
+        .filter((h) => h.registroPId === e.id)
+        .map((h) => ({
+          fechaAnterior: h.fechaAnterior,
+          fechaFinAnterior: h.fechaFinAnterior,
+          horaInicioAnterior: h.horaInicioAnterior?.slice(0, 5) ?? null,
+          horaTerminoAnterior: h.horaTerminoAnterior?.slice(0, 5) ?? null,
+          sedeAnterior:
+            sedes.find((s) => s.id === h.sedeAnterior)?.nombre ?? null,
+          fechaNueva: h.fechaNueva,
+          motivo: h.motivo,
+          por: h.userRfc ? (capturistas.get(h.userRfc) ?? h.userRfc) : null,
+          el: h.createdAt,
+        })),
     }));
   }
 }

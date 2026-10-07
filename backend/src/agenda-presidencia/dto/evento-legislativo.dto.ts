@@ -58,3 +58,33 @@ export class EventoLegislativoDto {
   @IsString({ each: true })
   comisiones?: string[];
 }
+
+/**
+ * Reprogramación de un evento (p. ej. por un oficio que informa el cambio de fecha). Lo que no
+ * se indique se conserva: "en el mismo horario y requerimientos".
+ */
+export class ReprogramarEventoDto {
+  @IsDateString({}, { message: 'La nueva fecha no es válida' })
+  fechaEvento!: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La nueva fecha final no es válida' })
+  fechaFin?: string | null;
+
+  @IsOptional()
+  @Matches(HORA, { message: 'La hora de inicio no es válida' })
+  horaInicio?: string;
+
+  @IsOptional()
+  @Matches(HORA, { message: 'La hora de término no es válida' })
+  horaTermino?: string;
+
+  @IsOptional()
+  @IsInt({ message: 'La sede no es válida' })
+  sede?: number;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Indica el motivo u oficio de la reprogramación' })
+  @MaxLength(1000)
+  motivo!: string;
+}

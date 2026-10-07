@@ -46,16 +46,25 @@
                 {{ p.cancelados.length === 1 ? 'evento cancelado' : 'eventos cancelados' }}</span
               >
             }
+            @if (p.reprogramados.length) {
+              <span class="azul"
+                ><b>{{ p.reprogramados.length }}</b>
+                {{
+                  p.reprogramados.length === 1 ? 'evento reprogramado' : 'eventos reprogramados'
+                }}</span
+              >
+            }
           </div>
           <div class="leyenda">
             @for (c of categorias; track c.clave) {
               <span><i [class]="'cat-' + c.clave"></i>{{ c.nombre }}</span>
             }
             <span><i class="cat-cancelado"></i>Cancelado</span>
+            <span><i class="cat-reprogramado"></i>Reprogramado</span>
           </div>
         </div>
 
-        @if (p.libresTodoElDia.length || p.cancelados.length) {
+        @if (p.libresTodoElDia.length || p.cancelados.length || p.reprogramados.length) {
           <div class="aviso-dia">
             @if (p.libresTodoElDia.length) {
               <p><b>Libres todo el día:</b> {{ p.libresTodoElDia.join(', ') }}.</p>
@@ -68,6 +77,20 @@
                 >
                 @for (c of p.cancelados; track c.id; let ultimo = $last) {
                   {{ c.titulo
+                  }}<span class="negro">{{ queLiberaCancelado(c) }}{{ ultimo ? '.' : ';' }}</span>
+                }
+              </p>
+            }
+            @if (p.reprogramados.length) {
+              <p class="azul-texto">
+                <b
+                  >{{ p.reprogramados.length }}
+                  {{
+                    p.reprogramados.length === 1 ? 'evento reprogramado' : 'eventos reprogramados'
+                  }}:</b
+                >
+                @for (c of p.reprogramados; track c.id; let ultimo = $last) {
+                  {{ c.titulo }} pasa al {{ diaCorto(c.reprogramadoA!)
                   }}<span class="negro">{{ queLiberaCancelado(c) }}{{ ultimo ? '.' : ';' }}</span>
                 }
               </p>
@@ -104,19 +127,25 @@
                 @for (b of f.barras; track b.evento.id) {
                   <div
                     class="barra"
-                    [class]="
-                      b.evento.cancelado ? 'barra cat-cancelado' : 'barra cat-' + b.evento.categoria
-                    "
+                    [class]="'barra cat-' + clase(b.evento)"
                     [style.left.%]="b.izquierda"
                     [style.width.%]="b.ancho"
                     [title]="b.evento.titulo"
                   >
                     @if (b.textoDentro) {
                       <span class="barra__texto"
-                        >{{ b.evento.cancelado ? 'Cancelado · ' : '' }}{{ b.evento.titulo }}</span
+                        >{{
+                          b.evento.cancelado
+                            ? 'Cancelado · '
+                            : b.evento.reprogramadoA
+                              ? 'Reprogramado · '
+                              : ''
+                        }}{{ b.evento.titulo }}</span
                       >
                     } @else if (b.evento.cancelado) {
                       <span class="barra__texto">Cancelado</span>
+                    } @else if (b.evento.reprogramadoA) {
+                      <span class="barra__texto">Reprog.</span>
                     }
                   </div>
                   @if (!b.textoDentro && b.anchoFuera) {
@@ -162,16 +191,12 @@
             </thead>
             <tbody>
               @for (r of p.eventos; track r.evento.id) {
-                <tr [class.cancelado]="r.evento.cancelado">
+                <tr [class.cancelado]="r.evento.cancelado || !!r.evento.reprogramadoA">
                   <td class="hora">{{ horario(r.evento) }}</td>
                   <td>
-                    <span
-                      class="tipo"
-                      [class]="
-                        'tipo txt-' + (r.evento.cancelado ? 'cancelado' : r.evento.categoria)
-                      "
-                      >{{ nombreCategoria(r.evento) }}</span
-                    >
+                    <span class="tipo" [class]="'tipo txt-' + clase(r.evento)">{{
+                      nombreCategoria(r.evento)
+                    }}</span>
                   </td>
                   <td>
                     <span class="titulo">{{ r.evento.titulo }}</span>
@@ -183,6 +208,16 @@
                     }
                     @if (r.evento.cancelado) {
                       <small class="rojo-texto">Cancelado {{ cuandoSeCancelo(r.evento) }}.</small>
+                    }
+                    @if (r.evento.reprogramadoA) {
+                      <small class="azul-texto"
+                        >Reprogramado al {{ diaCorto(r.evento.reprogramadoA) }}.</small
+                      >
+                    }
+                    @if (r.evento.reprogramadoDe) {
+                      <small class="azul-texto"
+                        >Reprogramado; antes: {{ diaCorto(r.evento.reprogramadoDe) }}.</small
+                      >
                     }
                   </td>
                   <td class="lugar">{{ r.lugar }}</td>

@@ -24,7 +24,10 @@ import {
   type UsuarioActual,
 } from '../common/usuario-actual';
 import { EventosLegislativosService } from './eventos-legislativos.service';
-import { EventoLegislativoDto } from './dto/evento-legislativo.dto';
+import {
+  EventoLegislativoDto,
+  ReprogramarEventoDto,
+} from './dto/evento-legislativo.dto';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -83,6 +86,17 @@ export class EventosLegislativosController {
     @Body() dto: EventoLegislativoDto,
   ) {
     return this.eventosService.editar(id, dto);
+  }
+
+  /** Cambia la fecha del evento (y opcionalmente horario y sede) dejando historial. */
+  @Post(':id/reprogramar')
+  @HttpCode(HttpStatus.OK)
+  reprogramar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReprogramarEventoDto,
+    @Usuario() usuario: UsuarioActual,
+  ) {
+    return this.eventosService.reprogramar(id, dto, usuario);
   }
 
   @Delete(':id')

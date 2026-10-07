@@ -217,6 +217,11 @@ export class AgendaPresidenciaService {
             : e.comisiones[0] || e.capturo,
       cancelado: false,
       canceladoEl: null as string | null,
+      registroPId: e.registroPId,
+      /** Día al que se movió (solo en el día original de un evento reprogramado). */
+      reprogramadoA: null as string | null,
+      /** Día en que estaba antes de su última reprogramación. */
+      reprogramadoDe: null as string | null,
     }));
 
     const cancelados = await this.registroModel.sequelize!.query<{
@@ -269,9 +274,13 @@ export class AgendaPresidenciaService {
             c.remitenteRfc),
       cancelado: true,
       canceladoEl: c.canceladoEl,
+      registroPId: null as number | null,
+      reprogramadoA: null as string | null,
+      reprogramadoDe: null as string | null,
     }));
 
-    const todos = [...activos, ...eventosCancelados];
+    const reprogramados = await this.reprogramadosEn(desde, fin, activos);
+    const todos = [...activos, ...eventosCancelados, ...reprogramados];
     const fechas: string[] = [];
     for (let d = desde; d <= fin; d = diaSiguiente(d)) fechas.push(d);
     return {
@@ -289,6 +298,123 @@ export class AgendaPresidenciaService {
           ),
       })),
     };
+  }
+
+  /**
+   * Para la agenda detallada: los eventos legislativos que estaban en el periodo y se
+   * reprogramaron (aparecen en su día original, sin ocupar la sede), y la fecha anterior de los
+   * que hoy están en el periodo tras una reprogramación.
+   */
+  private async reprogramadosEn(
+    desde: string,
+    hasta: string,
+    activos: {
+      fecha: string;
+      registroPId: number | null;
+      reprogramadoDe: string | null;
+    }[],
+  ) {
+    const db = this.registroModel.sequelize!;
+    const idsActivos = [
+      ...new Set(
+        activos.map((a) => a.registroPId).filter((x): x is number => !!x),
+      ),
+    ];
+    if (idsActivos.length) {
+      const ultimas = await db.query<{ id: number; fechaAnterior: string }>(
+        `SELECT er.registroP_id AS id, DATE_FORMAT(er.fecha_anterior, '%Y-%m-%d') AS fechaAnterior
+           FROM eventos_reprogramaciones er
+           JOIN (SELECT registroP_id, MAX(id) AS ultimo FROM eventos_reprogramaciones
+                  WHERE registroP_id IN (:ids) GROUP BY registroP_id) u ON u.ultimo = er.id`,
+        { type: QueryTypes.SELECT, replacements: { ids: idsActivos } },
+      );
+      const porEvento = new Map(
+        ultimas.map((u) => [Number(u.id), u.fechaAnterior]),
+      );
+      for (const a of activos) {
+        if (a.registroPId)
+          a.reprogramadoDe = porEvento.get(a.registroPId) ?? null;
+      }
+    }
+
+    const filas = await db.query<{
+      id: number;
+      registroPId: number;
+      desde: string;
+      hasta: string;
+      inicio: string | null;
+      fin: string | null;
+      sedeId: number | null;
+      sede: string | null;
+      fechaNueva: string;
+      motivo: string;
+      nombreEvento: string | null;
+      materia: string | null;
+      tipoEvento: string | null;
+    }>(
+      `SELECT er.id, er.registroP_id AS registroPId,
+          DATE_FORMAT(er.fecha_anterior, '%Y-%m-%d') AS desde,
+          DATE_FORMAT(COALESCE(er.fecha_fin_anterior, er.fecha_anterior), '%Y-%m-%d') AS hasta,
+          TIME_FORMAT(er.hora_inicio_anterior, '%H:%i') AS inicio,
+          TIME_FORMAT(er.hora_termino_anterior, '%H:%i') AS fin,
+          er.sede_anterior AS sedeId, s.salon AS sede,
+          DATE_FORMAT(er.fecha_nueva, '%Y-%m-%d') AS fechaNueva, er.motivo,
+          rp.nombre_evento AS nombreEvento, rp.materia, te.tipo AS tipoEvento
+        FROM eventos_reprogramaciones er
+        JOIN registro_presidencia rp ON rp.id = er.registroP_id
+        LEFT JOIN tipo_evento te ON te.id = rp.tipo_evento
+        LEFT JOIN salones s ON s.id = er.sede_anterior
+        WHERE er.fecha_anterior <= :hasta
+          AND COALESCE(er.fecha_fin_anterior, er.fecha_anterior) >= :desde`,
+      { type: QueryTypes.SELECT, replacements: { desde, hasta } },
+    );
+    if (filas.length === 0) return [];
+    const comisiones = await this.comisionesDe(
+      filas.map((f) => Number(f.registroPId)),
+    );
+    const activoEl = new Set(activos.map((a) => `${a.registroPId}|${a.fecha}`));
+
+    return filas.flatMap((f) => {
+      const sedeId = f.sedeId ? Number(f.sedeId) : null;
+      const lista = comisiones.get(Number(f.registroPId)) ?? [];
+      const dias: string[] = [];
+      for (
+        let d = f.desde < desde ? desde : f.desde;
+        d <= f.hasta && d <= hasta;
+        d = diaSiguiente(d)
+      ) {
+        dias.push(d);
+      }
+      return (
+        dias
+          // Si después volvió a quedar ese mismo día, no se marca como reprogramado.
+          .filter((dia) => !activoEl.has(`${f.registroPId}|${dia}`))
+          .map((dia, i) => ({
+            id: -(1_000_000 + Number(f.id) * 100 + i),
+            fecha: dia,
+            horaInicio: f.inicio,
+            horaTermino: f.fin,
+            sedeId,
+            sede: sedeId === SEDE_VIRTUAL ? 'Virtual' : f.sede,
+            categoria: categoriaEvento({
+              origen: 'legislativo',
+              sedeId,
+              tipoEvento: f.tipoEvento,
+              nombreEvento: f.nombreEvento,
+              asunto: null,
+            }),
+            titulo: f.nombreEvento || f.materia || f.tipoEvento || 'Evento',
+            detalle: f.motivo,
+            solicitante:
+              lista.length > 1 ? 'Comisiones unidas' : (lista[0] ?? null),
+            cancelado: false,
+            canceladoEl: null as string | null,
+            registroPId: Number(f.registroPId),
+            reprogramadoA: f.fechaNueva,
+            reprogramadoDe: null as string | null,
+          }))
+      );
+    });
   }
 
   private nombreSede(f: FilaAgenda): string | null {
@@ -323,6 +449,7 @@ export class AgendaPresidenciaService {
           ...comun,
           origen: 'documento' as const,
           registroId: f.registroId,
+          registroPId: null as number | null,
           titulo: f.title ?? f.folio ?? '',
           nombreEvento: f.nombreEventoRegistro,
           indicaciones: f.indicaciones,
@@ -348,6 +475,7 @@ export class AgendaPresidenciaService {
         ...comun,
         origen: 'legislativo' as const,
         registroId: null,
+        registroPId: f.registroPId,
         titulo: f.title ?? f.tipoEvento ?? '',
         nombreEvento: f.nombreEventoLegislativo,
         indicaciones: null,

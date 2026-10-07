@@ -121,6 +121,16 @@
             </div>
             <div class="band-desc">{{ r.asunto }}</div>
           </div>
+          <a
+            class="btn-turno"
+            [routerLink]="['/documentos', r.id, 'turno']"
+            title="Imprimir turno"
+            aria-label="Imprimir turno"
+            (click)="$event.stopPropagation()"
+            (keydown.enter)="$event.stopPropagation()"
+          >
+            <app-icono name="imprimir" />
+          </a>
           <span
             class="estado-lectura"
             [class.visto]="r.estatus === 'Concluido'"

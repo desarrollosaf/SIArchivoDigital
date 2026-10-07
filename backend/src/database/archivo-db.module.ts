@@ -32,6 +32,7 @@ import { TDireccion } from './models/t-direccion.model';
 import { TDepartamento } from './models/t-departamento.model';
 import { PumpesGabinete } from './models/pumpes-gabinete.model';
 import { WhatsappDestinatario } from './models/whatsapp-destinatario.model';
+import { EventoReprogramacion } from './models/evento-reprogramacion.model';
 
 export const MODELOS_ARCHIVO = [
   Registro,
@@ -56,6 +57,7 @@ export const MODELOS_ARCHIVO = [
   ComisionRegistro,
   PumpesGabinete,
   WhatsappDestinatario,
+  EventoReprogramacion,
 ];
 
 export const MODELOS_SAF = [

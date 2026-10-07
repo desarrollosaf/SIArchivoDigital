@@ -6,6 +6,7 @@ $evento: #2d5a80;
 $visita: #2e7d6a;
 $comedor: #a8691d;
 $foraneo: #707070;
+$reprogramado: #2d5a80;
 $rojo: #c0262d;
 $linea: #e7e2e4;
 $tinta: #222;
@@ -174,6 +175,11 @@ h2 {
   background: #fff;
   border: 0.3mm dashed $gris;
 }
+.cat-reprogramado {
+  background: #eef3f9;
+  border: 0.3mm dashed $reprogramado;
+  color: $reprogramado !important;
+}
 
 .txt-comision {
   color: $comision;
@@ -195,6 +201,14 @@ h2 {
 }
 .txt-cancelado {
   color: $rojo;
+}
+.txt-reprogramado {
+  color: $reprogramado;
+}
+
+.azul,
+.azul-texto {
+  color: $reprogramado;
 }
 
 // ---- Gráfica de ocupación -------------------------------------------------------------------

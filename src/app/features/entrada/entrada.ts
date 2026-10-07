@@ -1,5 +1,6 @@
 import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { FiltroTurnos, TurnoBandeja, TurnosService } from '../../core/services/turnos.service';
 import { BandejaPestanas } from '../../shared/bandeja/bandeja-pestanas';
 import {
@@ -18,7 +19,7 @@ import { Paginador } from '../../shared/paginador/paginador';
 @Component({
   selector: 'app-bandeja-entrada',
   standalone: true,
-  imports: [FormsModule, FiltroAnioMes, BandejaPestanas, Icono, Paginador, VistaRapida],
+  imports: [FormsModule, RouterLink, FiltroAnioMes, BandejaPestanas, Icono, Paginador, VistaRapida],
   templateUrl: './entrada.html',
 })
 export class BandejaEntrada {
@@ -45,16 +46,24 @@ export class BandejaEntrada {
       (t) =>
         (!prio || clasePrioridad(t.urgente) === prio) &&
         (!q ||
-          normalizar(`${t.folio} ${t.referencia ?? ''} ${t.asunto} ${t.remitente} ${t.turnadoPor ?? ''}`).includes(q)),
+          normalizar(
+            `${t.folio} ${t.referencia ?? ''} ${t.asunto} ${t.remitente} ${t.turnadoPor ?? ''}`,
+          ).includes(q)),
     );
   });
 
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.filtrados().length / POR_PAGINA)));
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.filtrados().length / POR_PAGINA)),
+  );
   protected readonly visibles = computed(() =>
     this.filtrados().slice((this.pagina() - 1) * POR_PAGINA, this.pagina() * POR_PAGINA),
   );
-  protected readonly desde = computed(() => (this.filtrados().length ? (this.pagina() - 1) * POR_PAGINA + 1 : 0));
-  protected readonly hasta = computed(() => Math.min(this.pagina() * POR_PAGINA, this.filtrados().length));
+  protected readonly desde = computed(() =>
+    this.filtrados().length ? (this.pagina() - 1) * POR_PAGINA + 1 : 0,
+  );
+  protected readonly hasta = computed(() =>
+    Math.min(this.pagina() * POR_PAGINA, this.filtrados().length),
+  );
 
   constructor(private readonly turnosService: TurnosService) {
     // Al cambiar la búsqueda o la prioridad se vuelve a la primera página.
@@ -89,7 +98,9 @@ export class BandejaEntrada {
   /** Abrir el archivo marca el turno como visto en el servidor; se refleja aquí sin recargar. */
   marcarVisto(t: TurnoBandeja): void {
     if (t.visto || this.soloLectura()) return;
-    this.turnos.update((lista) => lista.map((x) => (x.id === t.id ? { ...x, visto: true, nuevo: false } : x)));
+    this.turnos.update((lista) =>
+      lista.map((x) => (x.id === t.id ? { ...x, visto: true, nuevo: false } : x)),
+    );
   }
 
   private cargar(): void {

@@ -74,6 +74,8 @@ interface Pagina {
   eventosRecinto: number;
   recorridos: number;
   cancelados: EventoDetallado[];
+  /** Eventos que estaban este día y se movieron a otra fecha. */
+  reprogramados: EventoDetallado[];
   libresTodoElDia: string[];
   filas: FilaSalon[];
   eventos: FilaEvento[];
@@ -120,6 +122,7 @@ export class AgendaDetallada {
 
   nombreCategoria(e: EventoDetallado): string {
     if (e.cancelado) return 'Cancelado';
+    if (e.reprogramadoA) return 'Reprogramado';
     return CATEGORIAS.find((c) => c.clave === e.categoria)?.nombre ?? 'Evento';
   }
 
@@ -133,6 +136,19 @@ export class AgendaDetallada {
     if (!e.sede || !e.horaInicio) return '';
     const fin = e.horaTermino ? ` a ${e.horaTermino}` : '';
     return ` (${e.sede} queda libre de ${e.horaInicio}${fin})`;
+  }
+
+  /** Clase de color: cancelado y reprogramado tienen la suya; los demás, la de su tipo. */
+  clase(e: EventoDetallado): string {
+    if (e.cancelado) return 'cancelado';
+    if (e.reprogramadoA) return 'reprogramado';
+    return e.categoria;
+  }
+
+  /** "2026-10-21" -> "miércoles 21 de octubre". */
+  diaCorto(fecha: string): string {
+    const largo = this.diaLargo(fecha);
+    return largo.charAt(0).toLowerCase() + largo.slice(1).replace(/ de \d{4}$/, '');
   }
 
   /** "2026-10-05 09:40" -> "el 5 de octubre a las 09:40". */
@@ -149,8 +165,9 @@ export class AgendaDetallada {
 function armarPaginas(agenda: Agenda): Pagina[] {
   const salones = agenda.salones;
   return agenda.dias.map((dia) => {
-    const activos = dia.eventos.filter((e) => !e.cancelado);
+    const activos = dia.eventos.filter((e) => !e.cancelado && !e.reprogramadoA);
     const cancelados = dia.eventos.filter((e) => e.cancelado);
+    const reprogramados = dia.eventos.filter((e) => e.reprogramadoA);
 
     const filas: FilaSalon[] = salones.map((s) =>
       filaSalon(nombreCorto(s.nombre), false, s, dia.eventos),
@@ -174,13 +191,14 @@ function armarPaginas(agenda: Agenda): Pagina[] {
       eventosRecinto: activos.filter((e) => e.categoria !== 'foraneo').length,
       recorridos: activos.filter((e) => e.sedeId === SEDE_PALACIO).length,
       cancelados,
+      reprogramados,
       libresTodoElDia: filas.filter((f) => !f.recorridos && f.libreTodoElDia).map((f) => f.nombre),
       filas,
       eventos: dia.eventos.map((e) => ({
         evento: e,
         lugar: lugar(e),
         detalle: e.detalle && normalizar(e.detalle) !== normalizar(e.titulo) ? e.detalle : null,
-        nota: e.cancelado ? null : mismoEventoEn(e, activos),
+        nota: e.cancelado || e.reprogramadoA ? null : mismoEventoEn(e, activos),
       })),
     };
   });
@@ -219,13 +237,13 @@ function filaSalon(
   });
 
   const ocupados = propios
-    .filter((e) => !e.cancelado)
+    .filter((e) => !e.cancelado && !e.reprogramadoA)
     .map((e) => [
       minutos(e.horaInicio!),
       minutos(e.horaTermino ?? e.horaInicio!) || minutos(e.horaInicio!) + 30,
     ]);
   const libres = huecos(ocupados);
-  const liberados = propios.filter((e) => e.cancelado && e.horaTermino);
+  const liberados = propios.filter((e) => (e.cancelado || e.reprogramadoA) && e.horaTermino);
   return {
     nombre,
     recorridos,

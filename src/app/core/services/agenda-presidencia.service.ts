@@ -78,6 +78,10 @@ export interface EventoDetallado {
   cancelado: boolean;
   /** "YYYY-MM-DD HH:mm" en que se canceló. */
   canceladoEl: string | null;
+  /** En el día original de un evento reprogramado: la fecha a la que pasó (no ocupa la sede). */
+  reprogramadoA: string | null;
+  /** En el día actual de un evento reprogramado: la fecha en que estaba antes. */
+  reprogramadoDe: string | null;
 }
 
 export interface AgendaDetallada {
@@ -161,6 +165,29 @@ export interface EventoLegislativo {
   materia: string | null;
   comisiones: { id: string; nombre: string }[];
   capturo: string | null;
+  /** Historial de cambios de fecha, la más reciente primero. */
+  reprogramaciones: Reprogramacion[];
+}
+
+export interface Reprogramacion {
+  fechaAnterior: string;
+  fechaFinAnterior: string | null;
+  horaInicioAnterior: string | null;
+  horaTerminoAnterior: string | null;
+  sedeAnterior: string | null;
+  fechaNueva: string;
+  motivo: string;
+  por: string | null;
+  el: string;
+}
+
+export interface ReprogramarPayload {
+  fechaEvento: string;
+  fechaFin: string | null;
+  horaInicio: string;
+  horaTermino: string;
+  sede: number;
+  motivo: string;
 }
 
 export interface EventoLegislativoPayload {
@@ -208,6 +235,10 @@ export class EventosLegislativosService {
     return this.http.get<Disponibilidad>(`${LEGISLATIVOS}/disponibilidad`, {
       params: parametros({ fecha, inicio, termino, sede, excluir, hasta }),
     });
+  }
+
+  reprogramar(id: number, datos: ReprogramarPayload): Observable<EventoLegislativo> {
+    return this.http.post<EventoLegislativo>(`${LEGISLATIVOS}/${id}/reprogramar`, datos);
   }
 
   guardar(id: number | null, datos: EventoLegislativoPayload): Observable<unknown> {

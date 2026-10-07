@@ -445,6 +445,33 @@
     color: var(--tinta);
   }
 
+  // Imprimir turno directo desde la tarjeta (sin abrir el detalle).
+  .btn-turno {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #f6eef1;
+    color: var(--brand-primary);
+    transition:
+      background 0.15s,
+      color 0.15s;
+
+    app-icono {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--brand-primary);
+      color: #fff;
+    }
+  }
+
   .estado-lectura {
     display: flex;
     flex-shrink: 0;

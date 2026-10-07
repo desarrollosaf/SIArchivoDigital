@@ -2,7 +2,9 @@
   <app-bandeja-pestanas activa="recibidos" />
 
   @if (soloLectura()) {
-    <p class="aviso aviso--caja">Estás consultando la bandeja de tu titular en modo de solo lectura.</p>
+    <p class="aviso aviso--caja">
+      Estás consultando la bandeja de tu titular en modo de solo lectura.
+    </p>
   }
 
   <div class="toolbar">
@@ -15,7 +17,11 @@
         (ngModelChange)="busqueda.set($event)"
       />
     </div>
-    <select [ngModel]="filtro()" (ngModelChange)="cambiarFiltro($event)" aria-label="Estatus de los turnos">
+    <select
+      [ngModel]="filtro()"
+      (ngModelChange)="cambiarFiltro($event)"
+      aria-label="Estatus de los turnos"
+    >
       <option value="pendientes">Pendientes</option>
       <option value="atendidos">Atendidos</option>
     </select>
@@ -31,10 +37,20 @@
 
   <div class="filtros-prio">
     <small>Prioridad:</small>
-    <button type="button" class="badge alta filtro-prio" [class.on]="prioridad() === 'alta'" (click)="alternarPrioridad('alta')">
+    <button
+      type="button"
+      class="badge alta filtro-prio"
+      [class.on]="prioridad() === 'alta'"
+      (click)="alternarPrioridad('alta')"
+    >
       <span class="dot alta"></span>Urgente
     </button>
-    <button type="button" class="badge media filtro-prio" [class.on]="prioridad() === 'media'" (click)="alternarPrioridad('media')">
+    <button
+      type="button"
+      class="badge media filtro-prio"
+      [class.on]="prioridad() === 'media'"
+      (click)="alternarPrioridad('media')"
+    >
       <span class="dot media"></span>Ordinario
     </button>
   </div>
@@ -58,8 +74,12 @@
     <div class="vacio">
       <app-icono name="entrada" />
       @if (turnos().length === 0) {
-        <b>{{ filtro() === 'pendientes' ? 'No tienes turnos pendientes' : 'Sin turnos atendidos' }}</b>
-        <span>{{ filtro() === 'pendientes' ? '¡Todo al día!' : 'No hay turnos atendidos en este periodo.' }}</span>
+        <b>{{
+          filtro() === 'pendientes' ? 'No tienes turnos pendientes' : 'Sin turnos atendidos'
+        }}</b>
+        <span>{{
+          filtro() === 'pendientes' ? '¡Todo al día!' : 'No hay turnos atendidos en este periodo.'
+        }}</span>
       } @else {
         <b>Sin resultados</b>
         <span>Ningún documento coincide con la búsqueda.</span>
@@ -90,8 +110,12 @@
             </div>
             <div class="band-sub">
               <span class="folio">{{ t.folio }}</span>
-              <span class="badge info">{{ t.tipo === 'A' ? 'Para atención' : 'Para conocimiento' }}</span>
-              <span class="badge" [class]="clasePrioridad(t.urgente)">{{ t.urgente ? 'Urgente' : 'Ordinario' }}</span>
+              <span class="badge info">{{
+                t.tipo === 'A' ? 'Para atención' : 'Para conocimiento'
+              }}</span>
+              <span class="badge" [class]="clasePrioridad(t.urgente)">{{
+                t.urgente ? 'Urgente' : 'Ordinario'
+              }}</span>
               @if (t.cancelado) {
                 <span class="badge">Cancelado</span>
               } @else if (filtro() === 'pendientes') {
@@ -101,14 +125,32 @@
               } @else {
                 <span class="badge baja">{{ t.tipo === 'A' ? 'Atendido' : 'Enterado' }}</span>
               }
-              <span class="band-quien">De: <b>{{ t.remitente }}</b></span>
+              <span class="band-quien"
+                >De: <b>{{ t.remitente }}</b></span
+              >
               @if (t.turnadoPor) {
-                <span class="band-quien">· Turnó: <b>{{ t.turnadoPor }}</b></span>
+                <span class="band-quien"
+                  >· Turnó: <b>{{ t.turnadoPor }}</b></span
+                >
               }
             </div>
             <div class="band-desc">{{ t.asunto }}</div>
           </div>
-          <span class="estado-lectura" [class.visto]="t.visto" [title]="t.visto ? 'Visto' : 'Sin abrir'">
+          <a
+            class="btn-turno"
+            [routerLink]="['/documentos', t.registroId, 'turno']"
+            title="Imprimir turno"
+            aria-label="Imprimir turno"
+            (click)="$event.stopPropagation()"
+            (keydown.enter)="$event.stopPropagation()"
+          >
+            <app-icono name="imprimir" />
+          </a>
+          <span
+            class="estado-lectura"
+            [class.visto]="t.visto"
+            [title]="t.visto ? 'Visto' : 'Sin abrir'"
+          >
             <app-icono [name]="t.visto ? 'doblecheck' : 'check'" />
           </span>
         </div>
@@ -118,7 +160,11 @@
     <div class="pie-lista">
       <small>Mostrando {{ desde() }}–{{ hasta() }} de {{ filtrados().length }}</small>
       @if (totalPaginas() > 1) {
-        <app-paginador [paginaActual]="pagina()" [totalPaginas]="totalPaginas()" (cambiarPagina)="pagina.set($event)" />
+        <app-paginador
+          [paginaActual]="pagina()"
+          [totalPaginas]="totalPaginas()"
+          (cambiarPagina)="pagina.set($event)"
+        />
       }
     </div>
   }

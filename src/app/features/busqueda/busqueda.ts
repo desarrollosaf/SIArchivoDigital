@@ -1,5 +1,6 @@
 import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { RegistroListado, RegistrosService } from '../../core/services/registros.service';
 import {
   ClasePrioridad,
@@ -18,7 +19,7 @@ const MIN_CARACTERES = 2;
 @Component({
   selector: 'app-busqueda',
   standalone: true,
-  imports: [FormsModule, Icono, Paginador, VistaRapida],
+  imports: [FormsModule, RouterLink, Icono, Paginador, VistaRapida],
   templateUrl: './busqueda.html',
   styleUrl: './busqueda.scss',
 })
