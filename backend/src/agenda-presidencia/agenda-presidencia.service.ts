@@ -209,12 +209,14 @@ export class AgendaPresidenciaService {
             ? e.asunto
             : null
           : e.tipoReunion,
+      // Eventos legislativos: el nombre de cada comisión (si no tiene, quien lo capturó).
       solicitante:
         e.origen === 'documento'
           ? e.remitente
-          : e.comisiones.length > 1
-            ? 'Comisiones unidas'
-            : e.comisiones[0] || e.capturo,
+          : e.comisiones.length
+            ? null
+            : e.capturo,
+      comisiones: e.comisiones,
       cancelado: false,
       canceladoEl: null as string | null,
       registroPId: e.registroPId,
@@ -272,6 +274,7 @@ export class AgendaPresidenciaService {
           : (nombres.get(c.remitenteRfc ?? '') ??
             c.otroRemitente ??
             c.remitenteRfc),
+      comisiones: [] as string[],
       cancelado: true,
       canceladoEl: c.canceladoEl,
       registroPId: null as number | null,
@@ -405,8 +408,8 @@ export class AgendaPresidenciaService {
             }),
             titulo: f.nombreEvento || f.materia || f.tipoEvento || 'Evento',
             detalle: f.motivo,
-            solicitante:
-              lista.length > 1 ? 'Comisiones unidas' : (lista[0] ?? null),
+            solicitante: null as string | null,
+            comisiones: lista,
             cancelado: false,
             canceladoEl: null as string | null,
             registroPId: Number(f.registroPId),

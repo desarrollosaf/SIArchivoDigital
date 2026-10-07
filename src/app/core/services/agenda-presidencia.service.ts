@@ -75,6 +75,8 @@ export interface EventoDetallado {
   titulo: string;
   detalle: string | null;
   solicitante: string | null;
+  /** Comisiones del evento legislativo (se muestran en lugar del solicitante). */
+  comisiones: string[];
   cancelado: boolean;
   /** "YYYY-MM-DD HH:mm" en que se canceló. */
   canceladoEl: string | null;

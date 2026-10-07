@@ -221,7 +221,13 @@
                     }
                   </td>
                   <td class="lugar">{{ r.lugar }}</td>
-                  <td class="solicitante">{{ r.evento.solicitante || '—' }}</td>
+                  <td class="solicitante">
+                    @for (c of r.evento.comisiones; track $index) {
+                      <span class="comision">{{ c }}</span>
+                    } @empty {
+                      {{ r.evento.solicitante || '—' }}
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
