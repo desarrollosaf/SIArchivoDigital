@@ -204,6 +204,8 @@ export interface EventoLegislativoPayload {
   nombreEvento: string;
   materia: string | null;
   comisiones: string[];
+  /** Solo al crear: otras fechas en que se repite el mismo evento (uno por fecha). */
+  fechasAdicionales?: string[];
 }
 
 export interface Disponibilidad {

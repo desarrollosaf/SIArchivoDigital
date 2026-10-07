@@ -28,6 +28,8 @@ interface Formulario {
   fechaEvento: string;
   /** Opcional: si se indica, el evento se repite cada día hasta esta fecha. */
   fechaFin: string;
+  /** Solo al crear: otras fechas sueltas en que se repite el mismo evento. */
+  fechasAdicionales: string[];
   horaInicio: string;
   horaTermino: string;
   tipoEvento: number | null;
@@ -44,6 +46,7 @@ function vacio(): Formulario {
     id: null,
     fechaEvento: fechaHoyMexico(),
     fechaFin: '',
+    fechasAdicionales: [],
     horaInicio: '',
     horaTermino: '',
     tipoEvento: null,
@@ -267,6 +270,7 @@ export class EventosLegislativos {
       id: e.id,
       fechaEvento: e.fechaEvento,
       fechaFin: e.fechaFin ?? '',
+      fechasAdicionales: [],
       horaInicio: e.horaInicio ?? '',
       horaTermino: e.horaTermino ?? '',
       tipoEvento: e.tipoEvento.id,
@@ -311,13 +315,19 @@ export class EventosLegislativos {
         nombreEvento: f.nombreEvento.trim(),
         materia: this.pideMateria() ? f.materia.trim() || null : null,
         comisiones: this.esComision() ? f.comisiones.map((c) => c.id) : [],
+        fechasAdicionales: f.id ? undefined : f.fechasAdicionales.filter(Boolean),
       })
       .subscribe({
         next: () => {
           this.guardando.set(false);
           this.formulario.set(null);
+          const total = 1 + (f.id ? 0 : f.fechasAdicionales.filter(Boolean).length);
           this.toastService.success(
-            f.id ? 'Evento actualizado.' : 'Evento registrado y agregado a la agenda.',
+            f.id
+              ? 'Evento actualizado.'
+              : total > 1
+                ? `Se registraron ${total} eventos (uno por fecha) y se agregaron a la agenda.`
+                : 'Evento registrado y agregado a la agenda.',
           );
           this.cargar();
         },
@@ -360,10 +370,34 @@ export class EventosLegislativos {
     }
   }
 
+  agregarFecha(): void {
+    this.formulario.update((f) =>
+      f ? { ...f, fechasAdicionales: [...f.fechasAdicionales, ''] } : f,
+    );
+  }
+
+  cambiarFecha(i: number, fecha: string): void {
+    this.formulario.update((f) =>
+      f
+        ? { ...f, fechasAdicionales: f.fechasAdicionales.map((x, j) => (j === i ? fecha : x)) }
+        : f,
+    );
+  }
+
+  quitarFecha(i: number): void {
+    this.formulario.update((f) =>
+      f ? { ...f, fechasAdicionales: f.fechasAdicionales.filter((_, j) => j !== i) } : f,
+    );
+  }
+
   private faltantes(f: Formulario): string | null {
     if (f.fechaFin && f.fechaFin < f.fechaEvento) {
       return 'La fecha final no puede ser anterior a la fecha del evento.';
     }
+    const extra = f.fechasAdicionales.filter(Boolean);
+    if (extra.some((x) => x < this.hoy)) return 'Alguna fecha adicional ya pasó.';
+    if (new Set([f.fechaEvento, ...extra]).size !== extra.length + 1)
+      return 'Hay fechas repetidas.';
     if (!f.fechaEvento || !f.horaInicio || !f.horaTermino) return 'Indica la fecha y el horario.';
     if (f.horaTermino <= f.horaInicio)
       return 'La hora de término debe ser posterior a la de inicio.';

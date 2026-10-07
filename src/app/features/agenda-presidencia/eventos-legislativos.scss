@@ -2,6 +2,20 @@
   display: block;
 }
 
+// Fechas sueltas en que se repite el evento (solo al crear).
+.fechas-adicionales {
+  .fecha-extra {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 22rem;
+  }
+
+  .agregar {
+    align-self: flex-start;
+  }
+}
+
 .tabla {
   overflow-x: auto;
 

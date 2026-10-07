@@ -265,6 +265,35 @@
             ></textarea>
           </div>
         }
+
+        @if (!f.id) {
+          <div class="campo campo--completo fechas-adicionales">
+            <span class="campo__etiqueta"
+              >Repetir en otras fechas <small class="opcional">(opcional)</small></span
+            >
+            <span class="campo__ayuda"
+              >Para el mismo evento en fechas sueltas (p. ej. 1 de enero, 30 de marzo y 2 de
+              abril). Se registra un evento por fecha, con el mismo horario, sede y datos.</span
+            >
+            @for (x of f.fechasAdicionales; track $index; let i = $index) {
+              <div class="fecha-extra">
+                <input
+                  type="date"
+                  [min]="hoy"
+                  [attr.aria-label]="'Fecha adicional ' + (i + 1)"
+                  [ngModel]="x"
+                  (ngModelChange)="cambiarFecha(i, $event)"
+                />
+                <button type="button" class="enlace enlace--peligro" (click)="quitarFecha(i)">
+                  Quitar
+                </button>
+              </div>
+            }
+            <button type="button" class="btn btn--outline btn--sm agregar" (click)="agregarFecha()">
+              + Agregar fecha
+            </button>
+          </div>
+        }
       </div>
       <div class="acciones-formulario">
         <button type="button" class="btn btn--outline" (click)="formulario.set(null)">

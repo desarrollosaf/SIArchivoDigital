@@ -57,6 +57,21 @@ export class EventoLegislativoDto {
   @ArrayMaxSize(50)
   @IsString({ each: true })
   comisiones?: string[];
+
+  /**
+   * Solo al crear: otras fechas (no consecutivas) en las que se repite el mismo evento. Cada una
+   * se guarda como un evento propio, con el mismo horario, sede y datos.
+   */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30, {
+    message: 'Se pueden agregar como máximo 30 fechas adicionales',
+  })
+  @IsDateString(
+    {},
+    { each: true, message: 'Alguna fecha adicional no es válida' },
+  )
+  fechasAdicionales?: string[];
 }
 
 /**

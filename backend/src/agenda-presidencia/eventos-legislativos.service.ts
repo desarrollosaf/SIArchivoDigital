@@ -191,28 +191,74 @@ export class EventosLegislativosService {
     };
   }
 
+  /**
+   * Registra el evento. Con `fechasAdicionales` el mismo evento se registra también en esas
+   * fechas (p. ej. 1 de enero, 30 de marzo y 2 de abril): uno por fecha, con los mismos datos,
+   * para que cada uno se pueda editar, reprogramar o eliminar por separado. Si el evento es de
+   * varios días, cada fecha adicional conserva esa duración. Se guardan todos o ninguno.
+   */
   async crear(dto: EventoLegislativoDto, usuario: UsuarioActual) {
     const datos = await this.validar(dto);
-    if (datos.fechaEvento < fechaHoyMexico()) {
+    const hoy = fechaHoyMexico();
+    const duracion = datos.fechaFin
+      ? diasDelRango(datos.fechaEvento, datos.fechaFin).length - 1
+      : 0;
+    const finDe = (inicio: string): string | null =>
+      duracion ? diasDelRango(inicio, '9999-12-31')[duracion] : null;
+
+    const inicios = [
+      datos.fechaEvento,
+      ...(dto.fechasAdicionales ?? []).map((f) => f.slice(0, 10)),
+    ];
+    if (new Set(inicios).size !== inicios.length) {
+      throw new BadRequestException('Hay fechas repetidas.');
+    }
+    if (inicios.some((f) => f < hoy)) {
       throw new BadRequestException(
         'No se pueden agendar eventos con fecha pasada.',
       );
     }
-    await this.exigirSedeLibre(dto);
+    const rangos = inicios
+      .map((inicio) => ({ inicio, fin: finDe(inicio) ?? inicio }))
+      .sort((a, b) => a.inicio.localeCompare(b.inicio));
+    for (let i = 1; i < rangos.length; i++) {
+      if (rangos[i].inicio <= rangos[i - 1].fin) {
+        throw new BadRequestException(
+          `Las fechas ${rangos[i - 1].inicio} y ${rangos[i].inicio} se enciman: el evento dura ${duracion + 1} días.`,
+        );
+      }
+    }
+    for (const r of rangos) {
+      await this.exigirSedeLibre({
+        ...dto,
+        fechaEvento: r.inicio,
+        fechaFin: r.fin === r.inicio ? null : r.fin,
+      });
+    }
 
-    const evento = await this.eventoModel.sequelize!.transaction(
+    const ids = await this.eventoModel.sequelize!.transaction(
       async (transaction) => {
         const { comisiones, ...campos } = datos;
-        const nuevo = await this.eventoModel.create(
-          { ...campos, userRegistro: usuario.rfc, status: 1 },
-          { transaction },
-        );
-        await this.guardarComisiones(nuevo.id, comisiones, transaction);
-        await this.sincronizarAgenda(nuevo, transaction);
-        return nuevo;
+        const creados: number[] = [];
+        for (const inicio of inicios) {
+          const nuevo = await this.eventoModel.create(
+            {
+              ...campos,
+              fechaEvento: inicio,
+              fechaFin: finDe(inicio),
+              userRegistro: usuario.rfc,
+              status: 1,
+            },
+            { transaction },
+          );
+          await this.guardarComisiones(nuevo.id, comisiones, transaction);
+          await this.sincronizarAgenda(nuevo, transaction);
+          creados.push(nuevo.id);
+        }
+        return creados;
       },
     );
-    return { id: evento.id };
+    return { id: ids[0], ids };
   }
 
   async editar(id: number, dto: EventoLegislativoDto) {
@@ -471,7 +517,7 @@ export class EventosLegislativosService {
         .map((c) => `${c.horario} ${c.descripcion}`)
         .join('; ');
       throw new ConflictException(
-        `La sede no está disponible: ya hay un evento agendado en ese horario (${detalle}).`,
+        `La sede no está disponible el ${dto.fechaEvento.slice(8, 10)}/${dto.fechaEvento.slice(5, 7)}/${dto.fechaEvento.slice(0, 4)}: ya hay un evento agendado en ese horario (${detalle}).`,
       );
     }
   }
