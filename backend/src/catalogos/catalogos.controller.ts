@@ -65,7 +65,7 @@ export class CatalogosController {
     @Usuario() usuario: UsuarioActual,
     @Query('search') search?: string,
   ) {
-    return this.catalogosService.destinatarios(usuario.rfc, search);
+    return this.catalogosService.destinatarios(usuario, search);
   }
 
   @Get('departamentos')

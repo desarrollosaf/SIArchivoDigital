@@ -72,11 +72,16 @@ export class PadronService {
    *   dígitos de la clave), en las direcciones (…01), en la 40011 y en la 41001.
    *
    * Todo dentro de su dependencia, solo personas activas y con cuenta vigente para entrar.
+   *
+   * Con `incluirTitulares` (Presidencia y su Recepción) la regla es otra: su departamento más los
+   * titulares (rango 1) de cualquier dependencia. En Laravel era una lista fija de RFC
+   * (PIPA821010, LOFR830807, SECA800424, MALH711101, GAJC730614) en RegistroController@index.
    */
   async destinatariosPermitidos(
     rfc: string,
     search?: string,
     limite = 30,
+    incluirTitulares = false,
   ): Promise<ServidorPublico[]> {
     const perfil = await this.perfil(rfc);
     if (!perfil?.idDepartamento) return [];
@@ -110,8 +115,10 @@ export class PadronService {
         'FROM s_usuario s ' +
         'JOIN users_safs u ON u.rfc = s.N_Usuario AND u.deleted_at IS NULL ' +
         'LEFT JOIN s_users su ON su.username = s.N_Usuario ' +
-        'WHERE s.Estado = 1 AND s.id_Dependencia = :dependencia AND ' +
-        alcance +
+        'WHERE s.Estado = 1 AND ' +
+        (incluirTitulares
+          ? '(s.id_Departamento = :depto OR su.rango = 1)'
+          : `s.id_Dependencia = :dependencia AND ${alcance}`) +
         (term ? ' AND (s.Nombre LIKE :term OR s.N_Usuario LIKE :term)' : '') +
         ' ORDER BY s.Nombre LIMIT :limite',
       {

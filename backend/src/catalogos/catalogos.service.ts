@@ -12,6 +12,11 @@ import {
   TipoSolicitud,
 } from '../database/models/catalogos-simples.model';
 import { PadronService } from '../common/padron.service';
+import {
+  ROL_PRESIDENCIA,
+  ROL_RECEPCION,
+  UsuarioActual,
+} from '../common/usuario-actual';
 
 /**
  * Series "virtuales" que Laravel agregaba a mano en el formulario y que no existen en la tabla
@@ -170,11 +175,20 @@ export class CatalogosService {
   /**
    * A quién se puede turnar: las personas que permite la regla de Laravel según el área y rango
    * del usuario (ver PadronService.destinatariosPermitidos), más los grupos activos ("G:<id>").
+   * Presidencia y Recepción de Presidencia ven además a los titulares de todas las dependencias.
    */
-  async destinatarios(rfc: string, search?: string) {
+  async destinatarios(usuario: UsuarioActual, search?: string) {
     const term = search?.trim();
+    const incluirTitulares = [ROL_PRESIDENCIA, ROL_RECEPCION].includes(
+      usuario.rol,
+    );
     const [personas, grupos] = await Promise.all([
-      this.padron.destinatariosPermitidos(rfc, term),
+      this.padron.destinatariosPermitidos(
+        usuario.rfc,
+        term,
+        undefined,
+        incluirTitulares,
+      ),
       this.grupoModel.findAll({
         where: term
           ? { activo: true, grupo: { [Op.like]: `%${term}%` } }
