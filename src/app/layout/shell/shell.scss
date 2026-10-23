@@ -20,6 +20,8 @@
     display: flex;
     align-items: center;
     gap: 0.9rem;
+    min-width: 0;
+    margin-right: 0.75rem;
     text-decoration: none;
   }
 
@@ -92,10 +94,18 @@
   }
 
   &__username {
+    min-width: 0;
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--brand-ink);
     white-space: nowrap;
+  }
+
+  // Nombres largos se recortan con "…"; el nombre completo queda en el title.
+  &__nombre {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   // El nombre lleva a "Mi cuenta" (datos de contacto, contraseña, manual).
@@ -123,9 +133,45 @@
   }
 }
 
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
   .topbar__user {
     width: auto;
+  }
+}
+
+// Entre 1200 y 1400 px el menú completo apenas cabe: se compactan las opciones, el nombre se
+// recorta y "Cerrar sesión" queda solo con el ícono.
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+  .topbar {
+    &__brand {
+      gap: 0.6rem;
+    }
+
+    &__nav {
+      gap: 0.15rem;
+
+      .nav-link {
+        padding: 0.5rem 0.7rem;
+      }
+    }
+
+    &__nombre {
+      max-width: 150px;
+    }
+  }
+
+  .logout {
+    padding: 0.55rem 0.65rem;
+
+    &__texto {
+      display: none;
+    }
+  }
+}
+
+@media (min-width: 1400px) {
+  .topbar__nombre {
+    max-width: 260px;
   }
 }
 
@@ -416,7 +462,7 @@
   }
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
   .navbar-collapse {
     padding-top: 0.5rem;
   }
@@ -449,7 +495,34 @@
 
 @media (max-width: 520px) {
   .content {
-    padding: 1.5rem 1.1rem 2rem;
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .topbar {
+    &__logo {
+      height: 38px;
+    }
+
+    &__brand {
+      gap: 0.6rem;
+    }
+
+    &__subtitulo {
+      display: none;
+    }
+  }
+
+  // En el menú móvil el nombre ocupa el espacio libre y se recorta.
+  .topbar__cuenta {
+    flex: 1 1 auto;
+  }
+
+  .logout {
+    padding: 0.55rem 0.7rem;
+
+    &__texto {
+      display: none;
+    }
   }
 }
 

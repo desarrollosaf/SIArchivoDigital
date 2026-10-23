@@ -788,6 +788,10 @@
       gap: 2px;
     }
 
+    .band-titulo {
+      max-width: 100%;
+    }
+
     .meta-grid {
       grid-template-columns: 1fr;
       gap: 12px;
@@ -800,6 +804,39 @@
         width: 100%;
         justify-content: center;
       }
+    }
+  }
+
+  // Celular: prioridad y botones en una fila, el contenido debajo a todo lo ancho.
+  @media (max-width: 576px) {
+    .band-card {
+      flex-wrap: wrap;
+      row-gap: 8px;
+
+      &:hover {
+        transform: none;
+      }
+    }
+
+    .band-ic {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+
+      span {
+        width: 13px;
+        height: 13px;
+      }
+    }
+
+    .band-main {
+      flex-basis: 100%;
+      order: 1;
+    }
+
+    // Primer botón después del contenido: empuja los botones a la derecha.
+    .band-main + * {
+      margin-left: auto;
     }
   }
 }

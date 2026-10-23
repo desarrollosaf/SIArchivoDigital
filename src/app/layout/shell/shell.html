@@ -1,5 +1,5 @@
 <div class="shell">
-  <nav class="navbar navbar-expand-lg topbar sticky-top">
+  <nav class="navbar navbar-expand-xl topbar sticky-top">
     <div class="container-fluid px-3 px-lg-4">
       <a class="navbar-brand topbar__brand" routerLink="/home">
         <img
@@ -9,7 +9,9 @@
         />
         <span class="topbar__divider d-none d-sm-block" aria-hidden="true"></span>
         <span class="topbar__title"
-          >SIArchivoDigital<br /><small>Secretaría de Administración y Finanzas</small></span
+          >SIArchivoDigital<br /><small class="topbar__subtitulo"
+            >Secretaría de Administración y Finanzas</small
+          ></span
         >
       </a>
 
@@ -26,7 +28,7 @@
       </button>
 
       <div class="collapse navbar-collapse" id="mainNav">
-        <ul class="navbar-nav topbar__nav mx-lg-auto my-3 my-lg-0">
+        <ul class="navbar-nav topbar__nav mx-xl-auto my-3 my-xl-0">
           @for (item of nav(); track item.label) {
             <li class="nav-item dropdown">
               <a
@@ -58,7 +60,7 @@
         </ul>
 
         <div
-          class="topbar__user d-flex align-items-center justify-content-between justify-content-lg-end gap-3"
+          class="topbar__user d-flex align-items-center justify-content-between justify-content-xl-end gap-2 gap-xxl-3"
         >
           <div class="notificaciones">
             <button
@@ -133,7 +135,8 @@
               class="topbar__username topbar__cuenta"
               routerLink="/mi-cuenta"
               routerLinkActive="activo"
-              title="Mi cuenta: datos de contacto, contraseña y manual"
+              (click)="cerrarMenuMovil()"
+              [title]="(u.nombre ?? '') + ' · Mi cuenta: datos de contacto, contraseña y manual'"
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.6" />
@@ -144,10 +147,16 @@
                   stroke-linecap="round"
                 />
               </svg>
-              <span>{{ u.nombre }}</span>
+              <span class="topbar__nombre">{{ u.nombre }}</span>
             </a>
           }
-          <button type="button" class="logout" (click)="logout()">
+          <button
+            type="button"
+            class="logout"
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            (click)="logout()"
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -168,7 +177,7 @@
                 stroke-linejoin="round"
               />
             </svg>
-            <span>Cerrar sesión</span>
+            <span class="logout__texto">Cerrar sesión</span>
           </button>
         </div>
       </div>

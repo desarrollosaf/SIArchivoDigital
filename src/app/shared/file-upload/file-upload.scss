@@ -3,6 +3,8 @@
 }
 
 .file-upload {
+  // Contiene al input nativo oculto (absoluto) para que no ensanche la página.
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
