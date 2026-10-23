@@ -76,12 +76,15 @@ export class PadronService {
    * Con `incluirTitulares` (Presidencia y su Recepción) la regla es otra: su departamento más los
    * titulares (rango 1) de cualquier dependencia. En Laravel era una lista fija de RFC
    * (PIPA821010, LOFR830807, SECA800424, MALH711101, GAJC730614) en RegistroController@index.
+   *
+   * `adicionales`: RFC que se agregan aunque la regla no los incluya (excepciones por usuario).
    */
   async destinatariosPermitidos(
     rfc: string,
     search?: string,
     limite = 30,
     incluirTitulares = false,
+    adicionales: string[] = [],
   ): Promise<ServidorPublico[]> {
     const perfil = await this.perfil(rfc);
     if (!perfil?.idDepartamento) return [];
@@ -115,10 +118,12 @@ export class PadronService {
         'FROM s_usuario s ' +
         'JOIN users_safs u ON u.rfc = s.N_Usuario AND u.deleted_at IS NULL ' +
         'LEFT JOIN s_users su ON su.username = s.N_Usuario ' +
-        'WHERE s.Estado = 1 AND ' +
+        'WHERE s.Estado = 1 AND (' +
         (incluirTitulares
           ? '(s.id_Departamento = :depto OR su.rango = 1)'
-          : `s.id_Dependencia = :dependencia AND ${alcance}`) +
+          : `(s.id_Dependencia = :dependencia AND ${alcance})`) +
+        (adicionales.length ? ' OR s.N_Usuario IN (:adicionales)' : '') +
+        ')' +
         (term ? ' AND (s.Nombre LIKE :term OR s.N_Usuario LIKE :term)' : '') +
         ' ORDER BY s.Nombre LIMIT :limite',
       {
@@ -129,6 +134,7 @@ export class PadronService {
           dependencia: perfil.idDependencia,
           prefijo: `${clave.slice(0, 2)}%`,
           term: `%${term}%`,
+          adicionales,
           limite,
         },
       },

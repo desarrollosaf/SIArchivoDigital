@@ -5,6 +5,7 @@ import { Serie } from '../database/models/serie.model';
 import { Seccion } from '../database/models/seccion.model';
 import { SubSerie } from '../database/models/sub-serie.model';
 import { Grupo } from '../database/models/grupo.model';
+import { DestinatarioAdicional } from '../database/models/destinatario-adicional.model';
 import {
   Modalidad,
   Salon,
@@ -50,6 +51,8 @@ export class CatalogosService {
     @InjectModel(Serie) private readonly serieModel: typeof Serie,
     @InjectModel(SubSerie) private readonly subSerieModel: typeof SubSerie,
     @InjectModel(Grupo) private readonly grupoModel: typeof Grupo,
+    @InjectModel(DestinatarioAdicional)
+    private readonly adicionalModel: typeof DestinatarioAdicional,
     private readonly padron: PadronService,
   ) {}
 
@@ -175,19 +178,24 @@ export class CatalogosService {
   /**
    * A quién se puede turnar: las personas que permite la regla de Laravel según el área y rango
    * del usuario (ver PadronService.destinatariosPermitidos), más los grupos activos ("G:<id>").
-   * Presidencia y Recepción de Presidencia ven además a los titulares de todas las dependencias.
+   * Presidencia y Recepción de Presidencia ven además a los titulares de todas las dependencias, y
+   * cada usuario a sus destinatarios adicionales (tabla `destinatarios_adicionales`).
    */
   async destinatarios(usuario: UsuarioActual, search?: string) {
     const term = search?.trim();
     const incluirTitulares = [ROL_PRESIDENCIA, ROL_RECEPCION].includes(
       usuario.rol,
     );
+    const adicionales = await this.adicionalModel.findAll({
+      where: { rfcUsuario: usuario.rfc },
+    });
     const [personas, grupos] = await Promise.all([
       this.padron.destinatariosPermitidos(
         usuario.rfc,
         term,
         undefined,
         incluirTitulares,
+        adicionales.map((a) => a.rfcDestinatario),
       ),
       this.grupoModel.findAll({
         where: term
