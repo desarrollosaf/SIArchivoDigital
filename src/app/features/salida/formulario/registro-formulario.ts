@@ -68,6 +68,11 @@ export class RegistroFormulario {
   protected readonly tiposSolicitud = signal<Opcion[]>([]);
   protected readonly salones = signal<Opcion[]>([]);
   protected readonly folio = signal<string | null>(null);
+  /** Folio que propuso el sistema (contador del departamento + 1); el usuario puede cambiarlo. */
+  protected readonly folioSugerido = signal<string | null>(null);
+  protected readonly folioModificado = computed(
+    () => !this.modoEdicion && (this.folio() ?? '').trim() !== (this.folioSugerido() ?? ''),
+  );
   protected readonly sinDepartamento = signal(false);
 
   protected readonly fechaRecepcion = signal(fechaHoyMexico());
@@ -110,6 +115,9 @@ export class RegistroFormulario {
   protected readonly invalidos = computed(() => {
     if (!this.intentoGuardar()) return new Set<string>();
     const faltan = new Set<string>();
+    if (!this.modoEdicion && !this.sinDepartamento() && !(this.folio() ?? '').trim()) {
+      faltan.add('folio');
+    }
     if (!this.fechaRecepcion()) faltan.add('fechaRecepcion');
     if (!this.fechaLimite()) faltan.add('fechaLimite');
     if (this.fechaLimite() && this.fechaRecepcion() && this.fechaLimite() < this.fechaRecepcion()) {
@@ -166,6 +174,7 @@ export class RegistroFormulario {
     }
 
     const payload: RegistroPayload = {
+      folio: this.folioModificado() ? (this.folio() ?? '').trim() : undefined,
       fechaRecepcion: this.fechaRecepcion(),
       fechaDocumento: this.fechaDocumento() || undefined,
       referenciaDocumento: this.referenciaDocumento().trim() || undefined,
@@ -272,6 +281,7 @@ export class RegistroFormulario {
           this.cargarRegistro(this.idRegistro!);
         } else {
           this.folio.set(c.contexto.folio);
+          this.folioSugerido.set(c.contexto.folio);
           this.sinDepartamento.set(c.contexto.sinDepartamento);
           this.cargando.set(false);
         }

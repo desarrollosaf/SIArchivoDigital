@@ -17,6 +17,16 @@ const HORA = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
 /** Captura de un documento. Llega como multipart porque puede traer el archivo escaneado. */
 export class RegistroDto {
+  /**
+   * Folio capturado a mano (solo al registrar). Si no llega o es el sugerido, se asigna el
+   * consecutivo del departamento. Al editar se ignora.
+   */
+  @IsOptional()
+  @ATexto()
+  @IsString()
+  @MaxLength(255, { message: 'El folio no puede pasar de 255 caracteres' })
+  folio?: string;
+
   @IsDateString({}, { message: 'La fecha de recepción no es válida' })
   fechaRecepcion!: string;
 

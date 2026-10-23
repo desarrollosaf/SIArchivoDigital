@@ -119,6 +119,8 @@ export interface RegistroDetalle {
 
 /** Campos del formulario de captura; se envían como multipart junto con el archivo. */
 export interface RegistroPayload {
+  /** Solo al registrar y solo si el usuario cambió el folio sugerido. */
+  folio?: string;
   fechaRecepcion: string;
   fechaDocumento?: string;
   referenciaDocumento?: string;

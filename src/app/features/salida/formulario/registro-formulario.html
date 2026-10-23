@@ -18,12 +18,9 @@
       </a>
       <div>
         <h1>{{ modoEdicion ? 'Editar registro' : 'Registrar documento' }}</h1>
-        @if (folio()) {
+        @if (modoEdicion && folio()) {
           <p>
             Folio <strong>{{ folio() }}</strong>
-            @if (!modoEdicion) {
-              <span class="nota-folio">(se confirma al guardar)</span>
-            }
           </p>
         }
       </div>
@@ -46,9 +43,27 @@
       <div class="formulario formulario--3">
         <div class="campo">
           <label for="f-folio">Folio <span class="obligatorio">*</span></label>
-          <input id="f-folio" type="text" [value]="folio() ?? 'Sin folio'" readonly />
-          @if (!modoEdicion) {
-            <span class="campo__ayuda">Se asigna automáticamente al guardar.</span>
+          @if (modoEdicion || sinDepartamento()) {
+            <input id="f-folio" type="text" [value]="folio() ?? 'Sin folio'" readonly />
+          } @else {
+            <input
+              id="f-folio"
+              type="text"
+              maxlength="255"
+              [class.is-invalid]="invalidos().has('folio')"
+              [ngModel]="folio() ?? ''"
+              (ngModelChange)="folio.set($event)"
+            />
+            @if (folioModificado()) {
+              <span class="campo__ayuda">
+                Folio capturado a mano: se valida que no exista al guardar.
+                <button type="button" class="enlace-folio" (click)="folio.set(folioSugerido())">
+                  Usar el sugerido ({{ folioSugerido() }})
+                </button>
+              </span>
+            } @else {
+              <span class="campo__ayuda">Consecutivo sugerido de tu área; puedes modificarlo.</span>
+            }
           }
         </div>
         <div class="campo">

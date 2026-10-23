@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op, QueryTypes, Transaction, WhereOptions, literal } from 'sequelize';
+import { Op, Transaction, WhereOptions, literal } from 'sequelize';
 import type { Response } from 'express';
 import { Registro } from '../database/models/registro.model';
 import {
@@ -71,7 +71,10 @@ export class RegistrosService {
     private readonly catalogos: CatalogosService,
   ) {}
 
-  /** Folio que le tocaría al siguiente registro (solo informativo: se asigna al guardar). */
+  /**
+   * Folio sugerido para el siguiente registro: el contador de `folios` del departamento + 1, igual
+   * que Laravel. El usuario puede cambiarlo en el formulario.
+   */
   async contextoNuevo(usuario: UsuarioActual) {
     const perfil = await this.padron.perfil(usuario.rfc);
     const anio = anioActualMexico();
@@ -81,8 +84,11 @@ export class RegistrosService {
         where: { idDepartamento: perfil.idDepartamento, anio },
       });
       const uAdmin = fila?.uAdmin || perfil.clavePresupuestal || 0;
-      const usado = await this.consecutivoReciente(uAdmin, anio);
-      folio = `${uAdmin}/${Math.max(fila?.folio ?? 0, usado) + 1}/${anio}`;
+      folio = await this.consecutivoLibre(
+        uAdmin,
+        Number(fila?.folio ?? 0) + 1,
+        anio,
+      );
     }
     return {
       folio,
@@ -409,9 +415,10 @@ export class RegistrosService {
 
     const registro = await this.registroModel.sequelize!.transaction(
       async (transaction) => {
-        const folio = await this.siguienteFolio(
+        const folio = await this.asignarFolio(
           perfil.idDepartamento!,
           perfil.clavePresupuestal,
+          dto.folio,
           transaction,
         );
         const nuevo = await this.registroModel.create(
@@ -623,12 +630,18 @@ export class RegistrosService {
   }
 
   /**
-   * Consecutivo por departamento y año. La fila se bloquea dentro de la transacción para que dos
+   * Folio del registro nuevo. La fila del contador se bloquea dentro de la transacción para que dos
    * capturas simultáneas no obtengan el mismo folio.
+   *
+   * - Sin folio capturado, o con el sugerido: se usa el contador del departamento + 1 (saltando los
+   *   que ya existan) y el contador avanza, como en Laravel.
+   * - Con otro folio capturado a mano: se respeta si no está registrado y el contador no se mueve
+   *   (Laravel tampoco lo movía).
    */
-  private async siguienteFolio(
+  private async asignarFolio(
     idDepartamento: number,
     clavePresupuestal: number | null,
+    folioCapturado: string | undefined,
     transaction: Transaction,
   ) {
     const anio = anioActualMexico();
@@ -643,48 +656,49 @@ export class RegistrosService {
         { transaction },
       );
     }
-    let consecutivo =
-      Math.max(
-        Number(fila.folio),
-        await this.consecutivoReciente(fila.uAdmin, anio, transaction),
-      ) + 1;
+    const sugerido = await this.consecutivoLibre(
+      fila.uAdmin,
+      Number(fila.folio) + 1,
+      anio,
+      transaction,
+    );
+    const capturado = folioCapturado?.trim();
+
+    if (capturado && capturado !== sugerido) {
+      const existe = await this.registroModel.count({
+        where: { folio: capturado },
+        transaction,
+      });
+      if (existe) {
+        throw new BadRequestException(
+          `El folio ${capturado} ya está registrado. Captura otro o usa el sugerido (${sugerido}).`,
+        );
+      }
+      return capturado;
+    }
+
+    fila.folio = Number(sugerido.split('/')[1]);
+    await fila.save({ transaction });
+    return sugerido;
+  }
+
+  /** `{uAdmin}/{n}/{año}` con el primer n, desde `desde`, que no esté usado por otro registro. */
+  private async consecutivoLibre(
+    uAdmin: number,
+    desde: number,
+    anio: number,
+    transaction?: Transaction,
+  ): Promise<string> {
+    let consecutivo = desde;
     while (
       await this.registroModel.count({
-        where: { folio: `${fila.uAdmin}/${consecutivo}/${anio}` },
+        where: { folio: `${uAdmin}/${consecutivo}/${anio}` },
         transaction,
       })
     ) {
       consecutivo++;
     }
-    fila.folio = consecutivo;
-    await fila.save({ transaction });
-    return `${fila.uAdmin}/${fila.folio}/${anio}`;
-  }
-
-  /**
-   * En Laravel el folio se podía editar a mano en el formulario y entonces el contador de
-   * `folios` no avanzaba (p. ej. contador en 5 con registros "40011/3546/2026"). Se toma el
-   * consecutivo más alto entre los registros más recientes con ese prefijo: no el máximo
-   * absoluto, porque hay folios mal capturados (p. ej. "40011/171030042026/2026").
-   */
-  private async consecutivoReciente(
-    uAdmin: number,
-    anio: number,
-    transaction?: Transaction,
-  ): Promise<number> {
-    const [fila] = await this.registroModel.sequelize!.query<{
-      mayor: number | null;
-    }>(
-      'SELECT MAX(t.consecutivo) AS mayor FROM (' +
-        "SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(folio, '/', 2), '/', -1) AS UNSIGNED) AS consecutivo " +
-        'FROM registro WHERE folio LIKE :patron ORDER BY id DESC LIMIT 50) t',
-      {
-        replacements: { patron: `${uAdmin}/%/${anio}` },
-        type: QueryTypes.SELECT,
-        transaction,
-      },
-    );
-    return Number(fila?.mayor ?? 0);
+    return `${uAdmin}/${consecutivo}/${anio}`;
   }
 
   private async crearTurnos(
