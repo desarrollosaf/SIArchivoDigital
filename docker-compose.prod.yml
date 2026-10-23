@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: DockerFile
       args:
-        BASE_HREF: /Documentacion26/
+        BASE_HREF: /Documentacion/
     container_name: siarchivodigital-frontend
     ports:
       - "8078:80"
