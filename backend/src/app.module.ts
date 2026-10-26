@@ -24,6 +24,7 @@ import { GruposModule } from './grupos/grupos.module';
 import { RolesModule } from './roles/roles.module';
 import { AgendaPresidenciaModule } from './agenda-presidencia/agenda-presidencia.module';
 import { PerfilModule } from './perfil/perfil.module';
+import { ApiPublicaModule } from './api-publica/api-publica.module';
 import { AvisosWhatsappModule } from './avisos-whatsapp/avisos-whatsapp.module';
 
 interface MysqlConnectionConfig {
@@ -103,6 +104,7 @@ interface MysqlConnectionConfig {
     GruposModule,
     AgendaPresidenciaModule,
     PerfilModule,
+    ApiPublicaModule,
     AvisosWhatsappModule,
   ],
 })

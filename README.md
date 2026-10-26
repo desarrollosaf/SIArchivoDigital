@@ -161,6 +161,13 @@ El frontend llama a la API en `/Documentacion/backend`, así que el proxy invers
 debe enviar `/Documentacion/backend/` al backend (puerto 3040) y `/Documentacion/` al
 frontend (puerto 8078), en ambos casos quitando el prefijo.
 
+**API pública de la agenda.** Otros sistemas consultaban la agenda de Presidencia en Laravel con
+`GET /Documentacion/api/agenda` (sin sesión). Este backend la replica con el mismo JSON en
+`GET /Documentacion/backend/api/agenda` (opcional `?mes=AAAA-MM`; por defecto el mes en curso).
+Para que la URL anterior siga funcionando sin cambiar esos sistemas, el proxy debe enviar
+`/Documentacion/api/agenda` a `http://127.0.0.1:3040/api/agenda` **antes** de la regla de
+`/Documentacion/`; si no, esa URL cae en el frontend y regresa la página de Angular.
+
 ## Cambios de comportamiento respecto a Laravel
 
 - **Folio automático.** Ya no se captura a mano. Como en Laravel el folio se editaba y el contador
