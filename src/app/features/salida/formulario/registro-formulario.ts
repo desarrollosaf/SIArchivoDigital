@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import Swal from 'sweetalert2';
 import {
   CatalogosService,
   Opcion,
@@ -15,7 +16,6 @@ import { AuthService } from '../../../core/services/auth.service';
 import { EventosLegislativosService } from '../../../core/services/agenda-presidencia.service';
 import { FileUpload } from '../../../shared/file-upload/file-upload';
 import { PersonaPicker } from '../../../shared/persona-picker/persona-picker';
-import { Modal } from '../../../shared/modal/modal';
 import { fechaHoyMexico } from '../../../shared/utils/fecha-mexico';
 
 const REMITENTE_EXTERNO: Persona = { id: '999', nombre: 'Remitente externo (otra institución)' };
@@ -39,7 +39,7 @@ function mensajeError(err: HttpErrorResponse, porDefecto: string): string {
 @Component({
   selector: 'app-registro-formulario',
   standalone: true,
-  imports: [FormsModule, RouterLink, FileUpload, PersonaPicker, Modal],
+  imports: [FormsModule, RouterLink, FileUpload, PersonaPicker],
   templateUrl: './registro-formulario.html',
   styleUrl: './registro-formulario.scss',
 })
@@ -63,8 +63,6 @@ export class RegistroFormulario {
   protected readonly cargando = signal(true);
   protected readonly enviando = signal(false);
   protected readonly intentoGuardar = signal(false);
-  /** Documento recién registrado: abre el modal que pregunta si se registra otro. */
-  protected readonly registrado = signal<{ id: number; folio: string } | null>(null);
 
   protected readonly series = signal<SerieRegistro[]>([]);
   protected readonly tiposAtencion = signal<Opcion[]>([]);
@@ -219,7 +217,7 @@ export class RegistroFormulario {
       this.registrosService.crear(payload, archivo).subscribe({
         next: (r) => {
           this.enviando.set(false);
-          this.registrado.set({ id: r.id, folio: r.folio });
+          this.preguntarOtro(r.id, r.folio);
         },
         error: (err: HttpErrorResponse) => this.alFallar(err),
       });
@@ -259,9 +257,39 @@ export class RegistroFormulario {
     this.archivos.set(files.slice(-1));
   }
 
-  /** Cierra el modal y deja el formulario limpio, con el siguiente folio, para capturar otro. */
-  registrarOtro(): void {
-    this.registrado.set(null);
+  /**
+   * Tras registrar pregunta si se captura otro (antes Laravel regresaba al formulario).
+   * "Imprimir turno" abre otra pestaña y deja la alerta abierta.
+   */
+  private preguntarOtro(id: number, folio: string): void {
+    const turno = this.router.serializeUrl(this.router.createUrlTree(['/documentos', id, 'turno']));
+    const folioSeguro = folio.replace(/[<>&"]/g, '');
+    void Swal.fire({
+      icon: 'success',
+      title: '¡Documento registrado!',
+      html: `Se registró y turnó con el folio<div class="swal-folio">${folioSeguro}</div>¿Quieres registrar otro documento?`,
+      showConfirmButton: true,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, registrar otro',
+      denyButtonText: 'Imprimir turno',
+      cancelButtonText: 'Ver documento',
+      confirmButtonColor: 'rgb(150, 0, 72)',
+      denyButtonColor: '#5a002b',
+      cancelButtonColor: '#6c757d',
+      allowOutsideClick: false,
+      preDeny: () => {
+        window.open(`${document.baseURI.replace(/\/$/, '')}${turno}`, '_blank', 'noopener');
+        return false;
+      },
+    }).then((r) => {
+      if (r.isConfirmed) this.registrarOtro();
+      else void this.router.navigate(['/documentos', id]);
+    });
+  }
+
+  /** Deja el formulario limpio, con el siguiente folio, para capturar otro. */
+  private registrarOtro(): void {
     this.intentoGuardar.set(false);
     this.fechaRecepcion.set(fechaHoyMexico());
     this.fechaDocumento.set('');
@@ -295,12 +323,6 @@ export class RegistroFormulario {
       error: () => this.toastService.error('No se pudo obtener el siguiente folio.'),
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  verRegistrado(): void {
-    const r = this.registrado();
-    this.registrado.set(null);
-    if (r) void this.router.navigate(['/documentos', r.id]);
   }
 
   private alGuardar(id: number, mensaje: string): void {
