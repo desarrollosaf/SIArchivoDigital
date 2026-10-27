@@ -40,9 +40,11 @@
 
 .dia {
   margin-bottom: 1.5rem;
-  break-inside: avoid-page;
 
+  // El día puede partirse entre hojas (si no cabe completo, el navegador dejaba la
+  // primera hoja en blanco); solo el título no se queda solo al pie de la hoja.
   h2 {
+    break-after: avoid;
     margin: 0 0 0.5rem;
     padding: 0.4rem 0.7rem;
     border-radius: 6px;
@@ -90,6 +92,10 @@
       display: block;
       color: var(--brand-muted);
     }
+  }
+
+  thead {
+    display: table-header-group;
   }
 
   tr {
