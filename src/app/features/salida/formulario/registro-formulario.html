@@ -403,4 +403,28 @@
       </button>
     </div>
   }
+
+  @if (registrado(); as r) {
+    <app-modal titulo="Documento registrado" (cerrar)="verRegistrado()">
+      <p class="registrado">
+        Se registró y turnó con el folio <strong>{{ r.folio }}</strong>.<br />
+        ¿Quieres registrar otro documento?
+      </p>
+      <div class="acciones-formulario">
+        <button type="button" class="btn btn--outline" (click)="verRegistrado()">
+          Ver documento
+        </button>
+        <a
+          class="btn btn--outline"
+          [routerLink]="['/documentos', r.id, 'turno']"
+          target="_blank"
+          rel="noopener"
+          >Imprimir turno</a
+        >
+        <button type="button" class="btn btn--primary" (click)="registrarOtro()">
+          Registrar otro
+        </button>
+      </div>
+    </app-modal>
+  }
 </section>

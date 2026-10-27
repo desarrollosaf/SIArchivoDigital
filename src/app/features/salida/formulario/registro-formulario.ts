@@ -15,6 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { EventosLegislativosService } from '../../../core/services/agenda-presidencia.service';
 import { FileUpload } from '../../../shared/file-upload/file-upload';
 import { PersonaPicker } from '../../../shared/persona-picker/persona-picker';
+import { Modal } from '../../../shared/modal/modal';
 import { fechaHoyMexico } from '../../../shared/utils/fecha-mexico';
 
 const REMITENTE_EXTERNO: Persona = { id: '999', nombre: 'Remitente externo (otra institución)' };
@@ -38,7 +39,7 @@ function mensajeError(err: HttpErrorResponse, porDefecto: string): string {
 @Component({
   selector: 'app-registro-formulario',
   standalone: true,
-  imports: [FormsModule, RouterLink, FileUpload, PersonaPicker],
+  imports: [FormsModule, RouterLink, FileUpload, PersonaPicker, Modal],
   templateUrl: './registro-formulario.html',
   styleUrl: './registro-formulario.scss',
 })
@@ -62,6 +63,8 @@ export class RegistroFormulario {
   protected readonly cargando = signal(true);
   protected readonly enviando = signal(false);
   protected readonly intentoGuardar = signal(false);
+  /** Documento recién registrado: abre el modal que pregunta si se registra otro. */
+  protected readonly registrado = signal<{ id: number; folio: string } | null>(null);
 
   protected readonly series = signal<SerieRegistro[]>([]);
   protected readonly tiposAtencion = signal<Opcion[]>([]);
@@ -214,7 +217,10 @@ export class RegistroFormulario {
       });
     } else {
       this.registrosService.crear(payload, archivo).subscribe({
-        next: (r) => this.alGuardar(r.id, `Documento registrado con el folio ${r.folio}.`),
+        next: (r) => {
+          this.enviando.set(false);
+          this.registrado.set({ id: r.id, folio: r.folio });
+        },
         error: (err: HttpErrorResponse) => this.alFallar(err),
       });
     }
@@ -251,6 +257,50 @@ export class RegistroFormulario {
   onArchivos(files: File[]): void {
     // Un registro lleva un solo documento: si eligen otro, reemplaza al anterior.
     this.archivos.set(files.slice(-1));
+  }
+
+  /** Cierra el modal y deja el formulario limpio, con el siguiente folio, para capturar otro. */
+  registrarOtro(): void {
+    this.registrado.set(null);
+    this.intentoGuardar.set(false);
+    this.fechaRecepcion.set(fechaHoyMexico());
+    this.fechaDocumento.set('');
+    this.referenciaDocumento.set('');
+    this.fojas.set(null);
+    this.tipoSolicitud.set(null);
+    this.rastreo.set([]);
+    this.remitente.set([]);
+    this.otroRemitente.set('');
+    this.serieId.set(null);
+    this.tipoAtencion.set(1);
+    this.fechaLimite.set('');
+    this.horaInicio.set('');
+    this.horaTermino.set('');
+    this.salon.set(null);
+    this.nombreEvento.set('');
+    this.asunto.set('');
+    this.indicaciones.set('');
+    this.atencion.set([]);
+    this.conocimiento.set([]);
+    this.archivos.set([]);
+    this.tipoCorrespondencia.set(null);
+    this.dirigidoA.set([]);
+    this.dirigidoOtroNombre.set('');
+    this.registrosService.contextoNuevo().subscribe({
+      next: (c) => {
+        this.folio.set(c.folio);
+        this.folioSugerido.set(c.folio);
+        this.sinDepartamento.set(c.sinDepartamento);
+      },
+      error: () => this.toastService.error('No se pudo obtener el siguiente folio.'),
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  verRegistrado(): void {
+    const r = this.registrado();
+    this.registrado.set(null);
+    if (r) void this.router.navigate(['/documentos', r.id]);
   }
 
   private alGuardar(id: number, mensaje: string): void {
