@@ -65,8 +65,22 @@ export class RegistrosController {
   }
 
   @Get('buscar')
-  buscar(@Usuario() usuario: UsuarioActual, @Query('q') q: string) {
-    return this.registrosService.buscar(usuario, q);
+  buscar(
+    @Usuario() usuario: UsuarioActual,
+    @Query('q') q?: string,
+    @Query('remitente') remitente?: string,
+    @Query('urgente') urgente?: string,
+    @Query('pagina') pagina?: string,
+    @Query('porPagina') porPagina?: string,
+  ) {
+    return this.registrosService.buscar(usuario, {
+      q,
+      remitente,
+      urgente:
+        urgente === 'true' ? true : urgente === 'false' ? false : undefined,
+      pagina: Number(pagina) || 1,
+      porPagina: Number(porPagina) || 20,
+    });
   }
 
   @Get('rastreables')

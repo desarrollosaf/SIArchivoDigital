@@ -8,6 +8,22 @@ export type EstatusRegistro = 'Pendiente' | 'Concluido' | 'Cancelado';
 export type FiltroEstatus = 'pendientes' | 'concluidos' | 'cancelados' | 'todos';
 export type TipoTurno = 'A' | 'C';
 
+export interface FiltrosBusqueda {
+  q?: string;
+  /** RFC exacto del remitente. */
+  remitente?: string;
+  urgente?: boolean;
+  pagina: number;
+  porPagina: number;
+}
+
+export interface ResultadoBusqueda {
+  total: number;
+  pagina: number;
+  porPagina: number;
+  filas: RegistroListado[];
+}
+
 export interface RegistroListado {
   id: number;
   folio: string;
@@ -172,8 +188,14 @@ export class RegistrosService {
     return this.http.get<RegistroListado[]>(API, { params });
   }
 
-  buscar(q: string): Observable<RegistroListado[]> {
-    return this.http.get<RegistroListado[]>(`${API}/buscar`, { params: { q } });
+  buscar(filtros: FiltrosBusqueda): Observable<ResultadoBusqueda> {
+    let params = new HttpParams()
+      .set('pagina', filtros.pagina)
+      .set('porPagina', filtros.porPagina);
+    if (filtros.q) params = params.set('q', filtros.q);
+    if (filtros.remitente) params = params.set('remitente', filtros.remitente);
+    if (filtros.urgente !== undefined) params = params.set('urgente', filtros.urgente);
+    return this.http.get<ResultadoBusqueda>(`${API}/buscar`, { params });
   }
 
   rastreables(search: string): Observable<Persona[]> {

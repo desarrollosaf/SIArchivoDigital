@@ -1,7 +1,10 @@
 <section class="pagina intranet">
   <div class="page-head">
     <h2><app-icono name="buscar" /> Búsqueda de folios</h2>
-    <p>Busca por folio, referencia, asunto, indicaciones o nombre del remitente.</p>
+    <p>
+      Busca por folio, referencia, asunto, indicaciones o nombre del remitente. Para ver todo lo
+      que envió una persona, elígela en “Remitente”.
+    </p>
   </div>
 
   <form class="toolbar" (ngSubmit)="buscar()">
@@ -16,6 +19,15 @@
         (ngModelChange)="termino.set($event)"
       />
     </div>
+    <div class="remitente">
+      <app-persona-picker
+        fuente="servidores"
+        [multiple]="false"
+        placeholder="Remitente (opcional)…"
+        [seleccion]="remitente()"
+        (seleccionChange)="elegirRemitente($event)"
+      />
+    </div>
     @if (buscado() !== null) {
       <button type="button" class="btn-i" (click)="limpiar()">Limpiar</button>
     }
@@ -25,11 +37,10 @@
   </form>
 
   <p class="nota">
-    Se muestran hasta 200 resultados, los más recientes primero, de los documentos a los que tienes
-    acceso.
+    Resultados de los documentos a los que tienes acceso, los más recientes primero.
   </p>
 
-  @if (resultados().length) {
+  @if (buscado() !== null) {
     <div class="filtros-prio">
       <small>Prioridad:</small>
       <button
@@ -70,17 +81,19 @@
     <div class="vacio">
       <app-icono name="buscar" />
       <b>Escribe qué buscar</b>
-      <span>Folio, número de oficio, asunto o nombre del remitente.</span>
+      <span>Folio, número de oficio, asunto o nombre del remitente, o elige un remitente.</span>
     </div>
-  } @else if (filtrados().length === 0) {
+  } @else if (total() === 0) {
     <div class="vacio">
       <app-icono name="buscar" />
       <b>Sin resultados</b>
-      <span>Ningún documento coincide con “{{ buscado() }}”.</span>
+      <span>Ningún documento coincide con {{ descripcionBusqueda() }}{{
+        prioridad() ? ' con esa prioridad' : ''
+      }}.</span>
     </div>
   } @else {
     <div class="bandeja-cards">
-      @for (r of visibles(); track r.id) {
+      @for (r of resultados(); track r.id) {
         <div
           class="band-card"
           [class.cancelada]="r.estatus === 'Cancelado'"
@@ -144,14 +157,14 @@
 
     <div class="pie-lista">
       <small
-        >Mostrando {{ desde() }}–{{ hasta() }} de {{ filtrados().length }}
-        {{ filtrados().length === 1 ? 'resultado' : 'resultados' }}</small
+        >Mostrando {{ desde() }}–{{ hasta() }} de {{ total().toLocaleString('es-MX') }}
+        {{ total() === 1 ? 'resultado' : 'resultados' }}</small
       >
       @if (totalPaginas() > 1) {
         <app-paginador
           [paginaActual]="pagina()"
           [totalPaginas]="totalPaginas()"
-          (cambiarPagina)="pagina.set($event)"
+          (cambiarPagina)="cambiarPagina($event)"
         />
       }
     </div>

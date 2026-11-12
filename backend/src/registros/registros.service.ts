@@ -38,6 +38,15 @@ import {
 export type FiltroEstatus =
   'pendientes' | 'concluidos' | 'cancelados' | 'todos';
 
+export interface FiltrosBusqueda {
+  q?: string;
+  remitente?: string;
+  urgente?: boolean;
+  pagina: number;
+  porPagina: number;
+}
+
+const MAX_POR_PAGINA = 100;
 const CARPETA_REGISTROS = 'registros';
 /** "Dirigido a: otro": el nombre se captura en destinatario_otro (como en Laravel). */
 const DESTINATARIO_OTRO = '99999';
@@ -137,24 +146,43 @@ export class RegistrosService {
     return this.aFilas(registros);
   }
 
-  /** Búsqueda por folio, referencia, asunto, indicaciones o remitente. */
-  async buscar(usuario: UsuarioActual, termino: string) {
-    const q = termino?.trim();
-    if (!q || q.length < 2) return [];
+  /**
+   * Búsqueda por folio, referencia, asunto, indicaciones o remitente, paginada en el servidor:
+   * solo se arman (turnos, nombres del padrón) los registros de la página pedida.
+   * `remitente` filtra por el RFC exacto de quien envió (usa el índice remitente_rfc + created_at).
+   */
+  async buscar(usuario: UsuarioActual, filtros: FiltrosBusqueda) {
+    const q = filtros.q?.trim() ?? '';
+    const remitente = filtros.remitente?.trim() ?? '';
+    const porPagina = Math.min(
+      Math.max(Math.trunc(filtros.porPagina) || 20, 1),
+      MAX_POR_PAGINA,
+    );
+    const pagina = Math.max(Math.trunc(filtros.pagina) || 1, 1);
+    if (q.length < 2 && !remitente) {
+      return { total: 0, pagina, porPagina, filas: [] };
+    }
 
-    const rfcsRemitente = await this.padron.rfcsPorNombre(q);
-    const like = { [Op.like]: `%${q}%` };
-    const coincidencias: WhereOptions[] = [
-      { folio: like },
-      { referenciaDocumento: like },
-      { tituloDoc: like },
-      { descripcionDoc: like },
-      { otroRemitente: like },
-    ];
-    if (rfcsRemitente.length)
-      coincidencias.push({ remitenteRfc: { [Op.in]: rfcsRemitente } });
+    const condiciones: WhereOptions[] = [];
+    if (remitente) condiciones.push({ remitenteRfc: remitente });
+    if (q.length >= 2) {
+      const rfcsRemitente = await this.padron.rfcsPorNombre(q);
+      const like = { [Op.like]: `%${q}%` };
+      const coincidencias: WhereOptions[] = [
+        { folio: like },
+        { referenciaDocumento: like },
+        { tituloDoc: like },
+        { descripcionDoc: like },
+        { otroRemitente: like },
+      ];
+      if (rfcsRemitente.length)
+        coincidencias.push({ remitenteRfc: { [Op.in]: rfcsRemitente } });
+      condiciones.push({ [Op.or]: coincidencias });
+    }
+    if (filtros.urgente === true)
+      condiciones.push({ tipoAtencion: { [Op.ne]: 1 } });
+    if (filtros.urgente === false) condiciones.push({ tipoAtencion: 1 });
 
-    const condiciones: WhereOptions[] = [{ [Op.or]: coincidencias }];
     if (!esAdministrador(usuario)) {
       const titular = await this.acceso.titular(usuario);
       const rfcs = [...new Set([usuario.rfc, titular.rfc])].map((r) =>
@@ -174,29 +202,37 @@ export class RegistrosService {
       });
     }
 
-    const registros = await this.registroModel.findAll({
-      where: { [Op.and]: condiciones },
-      include: [
-        {
-          model: RegistroAtencion,
-          as: 'turnos',
-          // Consulta aparte: unirlos en un solo JOIN con los textos largos tardaba ~1 min.
-          separate: true,
-          attributes: [
-            'id',
-            'registroId',
-            'userRfc',
-            'tipoAtencion',
-            'statusAtencion',
-            'activo',
-          ],
-        },
-        { model: TipoAtencion, as: 'tipo', attributes: ['id', 'tipo'] },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 200,
-    });
-    return this.aFilas(registros);
+    const where = { [Op.and]: condiciones };
+    const [total, registros] = await Promise.all([
+      this.registroModel.count({ where }),
+      this.registroModel.findAll({
+        where,
+        include: [
+          {
+            model: RegistroAtencion,
+            as: 'turnos',
+            // Consulta aparte: unirlos en un solo JOIN con los textos largos tardaba ~1 min.
+            separate: true,
+            attributes: [
+              'id',
+              'registroId',
+              'userRfc',
+              'tipoAtencion',
+              'statusAtencion',
+              'activo',
+            ],
+          },
+          { model: TipoAtencion, as: 'tipo', attributes: ['id', 'tipo'] },
+        ],
+        order: [
+          ['createdAt', 'DESC'],
+          ['id', 'DESC'],
+        ],
+        limit: porPagina,
+        offset: (pagina - 1) * porPagina,
+      }),
+    ]);
+    return { total, pagina, porPagina, filas: await this.aFilas(registros) };
   }
 
   /** Registros propios para relacionar uno nuevo como seguimiento ("folio de rastreo"). */
