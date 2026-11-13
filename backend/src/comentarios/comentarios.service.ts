@@ -91,7 +91,7 @@ export class ComentariosService {
   ) {
     const comentario = await this.comentarioModel.findByPk(id);
     if (!comentario) throw new NotFoundException('El comentario no existe');
-    await this.acceso.registroVisible(comentario.regId, usuario);
+    await this.acceso.registroConsultable(comentario.regId, usuario);
     this.archivos.enviar(res, comentario.filePath);
   }
 
@@ -102,7 +102,7 @@ export class ComentariosService {
   ) {
     const respuesta = await this.respuestaModel.findByPk(id);
     if (!respuesta) throw new NotFoundException('La respuesta no existe');
-    await this.acceso.registroVisible(respuesta.regId, usuario);
+    await this.acceso.registroConsultable(respuesta.regId, usuario);
     this.archivos.enviar(res, respuesta.filePath);
   }
 }

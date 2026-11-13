@@ -254,8 +254,12 @@ export class RegistrosService {
   }
 
   async detalle(id: number, usuario: UsuarioActual) {
-    const registro = await this.acceso.registroVisible(id, usuario);
+    const { registro, soloConsulta } = await this.acceso.registroConsultable(
+      id,
+      usuario,
+    );
     const titular = await this.acceso.titular(usuario);
+    const soloLectura = titular.soloLectura || soloConsulta;
 
     const [turnos, comentarios, tipo, rastreo] = await Promise.all([
       this.atencionModel.findAll({
@@ -384,7 +388,7 @@ export class RegistrosService {
         tieneConclusion: tieneArchivo(t.fileConclusion),
         fecha: t.createdAt,
         puedeCancelar:
-          !titular.soloLectura &&
+          !soloLectura &&
           !t.statusAtencion &&
           (t.userTurna === usuario.rfc || esPropio),
       })),
@@ -407,10 +411,16 @@ export class RegistrosService {
         })),
       })),
       permisos: {
-        soloLectura: titular.soloLectura,
-        editar: esPropio && !!registro.activo && !titular.soloLectura,
-        cancelar: esPropio && !!registro.activo && !titular.soloLectura,
-        comentar: !!registro.activo && !titular.soloLectura,
+        soloLectura,
+        /** Por qué es solo lectura: lector delegado o consulta desde la Agenda de Presidencia. */
+        motivoLectura: soloConsulta
+          ? ('agenda' as const)
+          : titular.soloLectura
+            ? ('delegado' as const)
+            : null,
+        editar: esPropio && !!registro.activo && !soloLectura,
+        cancelar: esPropio && !!registro.activo && !soloLectura,
+        comentar: !!registro.activo && !soloLectura,
         miTurno: miTurno
           ? {
               id: Number(miTurno.id),
@@ -538,7 +548,7 @@ export class RegistrosService {
 
   /** Entrega el documento; si quien lo abre tiene un turno, se marca como visto. */
   async enviarArchivo(id: number, usuario: UsuarioActual, res: Response) {
-    const registro = await this.acceso.registroVisible(id, usuario);
+    const { registro } = await this.acceso.registroConsultable(id, usuario);
     await this.atencionModel.update(
       { visto: true, notificacion: false },
       { where: { registroId: id, userRfc: usuario.rfc } },

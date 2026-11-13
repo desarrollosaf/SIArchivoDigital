@@ -74,7 +74,11 @@
     </header>
 
     @if (r.permisos.soloLectura) {
-      <p class="aviso aviso--caja">Consulta en modo de solo lectura (lector delegado).</p>
+      <p class="aviso aviso--caja">
+        Consulta en modo de solo lectura ({{
+          r.permisos.motivoLectura === 'agenda' ? 'Agenda de Presidencia' : 'lector delegado'
+        }}).
+      </p>
     }
 
     <div class="tarjeta">

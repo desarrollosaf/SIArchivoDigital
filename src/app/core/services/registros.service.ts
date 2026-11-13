@@ -126,6 +126,7 @@ export interface RegistroDetalle {
   comentarios: ComentarioDetalle[];
   permisos: {
     soloLectura: boolean;
+    motivoLectura: 'delegado' | 'agenda' | null;
     editar: boolean;
     cancelar: boolean;
     comentar: boolean;

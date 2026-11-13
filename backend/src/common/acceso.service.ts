@@ -8,7 +8,12 @@ import { Op } from 'sequelize';
 import { Registro } from '../database/models/registro.model';
 import { RegistroAtencion } from '../database/models/registro-atencion.model';
 import { UsLectura } from '../database/models/us-lectura.model';
-import { esAdministrador, UsuarioActual } from './usuario-actual';
+import { Agenda } from '../database/models/agenda.model';
+import {
+  esAdministrador,
+  ROL_PRESIDENCIA,
+  UsuarioActual,
+} from './usuario-actual';
 
 /** De quién son las bandejas que se están viendo. */
 export interface Titular {
@@ -28,6 +33,8 @@ export class AccesoService {
     private readonly registroModel: typeof Registro,
     @InjectModel(RegistroAtencion)
     private readonly atencionModel: typeof RegistroAtencion,
+    @InjectModel(Agenda)
+    private readonly agendaModel: typeof Agenda,
   ) {}
 
   /**
@@ -88,6 +95,33 @@ export class AccesoService {
       throw new ForbiddenException('No tienes acceso a este registro');
     }
     return registro;
+  }
+
+  /**
+   * Para consultar (ver detalle y descargar archivos), sin poder comentar, turnar ni concluir:
+   * además de quien cumple `registroVisible`, el rol Presidencia puede ver los documentos que
+   * están en la Agenda de Presidencia, porque ya los ve en el calendario.
+   * `soloConsulta` es true cuando el acceso viene solo de la agenda.
+   */
+  async registroConsultable(
+    registroId: number,
+    usuario: UsuarioActual,
+  ): Promise<{ registro: Registro; soloConsulta: boolean }> {
+    try {
+      const registro = await this.registroVisible(registroId, usuario);
+      return { registro, soloConsulta: false };
+    } catch (error) {
+      if (
+        !(error instanceof ForbiddenException) ||
+        usuario.rol !== ROL_PRESIDENCIA
+      )
+        throw error;
+      const enAgenda = await this.agendaModel.count({ where: { registroId } });
+      if (!enAgenda) throw error;
+      const registro = await this.registroModel.findByPk(registroId);
+      if (!registro) throw new NotFoundException('El registro no existe');
+      return { registro, soloConsulta: true };
+    }
   }
 
   /** Solo quien capturó el registro (o el administrador) puede editarlo o cancelarlo. */

@@ -322,7 +322,7 @@ export class TurnosService {
   async enviarConclusion(id: number, usuario: UsuarioActual, res: Response) {
     const turno = await this.atencionModel.findByPk(id);
     if (!turno) throw new NotFoundException('El turno no existe');
-    await this.acceso.registroVisible(turno.registroId, usuario);
+    await this.acceso.registroConsultable(turno.registroId, usuario);
     this.archivos.enviar(res, turno.fileConclusion);
   }
 
